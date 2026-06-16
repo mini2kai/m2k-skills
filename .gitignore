@@ -40,3 +40,7 @@ skills/ai-worklog/data/*.xlsm
 # Local web-demo-publisher runtime state
 skills/web-demo-publisher/data/*.local.json
 skills/web-demo-publisher/data/*.local.jsonc
+
+# Local generated presentation artifacts
+m2k-skills-introduction-deck.md
+slides/

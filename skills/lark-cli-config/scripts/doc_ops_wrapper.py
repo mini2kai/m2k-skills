@@ -10,6 +10,7 @@ from common import (
     json_exit,
     load_reference_json,
     normalize_document_target,
+    prepare_markdown_cli_file,
     run_cli,
 )
 
@@ -48,6 +49,28 @@ def require_auth(as_identity="user"):
 
 def fetch_doc(doc_arg, as_identity="user", output_format="pretty"):
     return run_cli(["docs", "+fetch", "--doc", doc_arg, "--as", as_identity, "--format", output_format], timeout=120)
+
+
+def update_doc_overwrite(doc_arg, file_info, as_identity="user"):
+    return run_cli([
+        "docs", "+update",
+        "--doc", doc_arg,
+        "--mode", "overwrite",
+        "--markdown", file_info["cli_markdown_arg"],
+        "--as", as_identity,
+    ], timeout=180, cwd=file_info["cli_cwd"])
+
+
+def update_doc_overwrite_v2(doc_arg, file_info, as_identity="user"):
+    return run_cli([
+        "docs", "+update",
+        "--api-version", "v2",
+        "--doc", doc_arg,
+        "--command", "overwrite",
+        "--content", file_info["cli_markdown_arg"],
+        "--doc-format", "markdown",
+        "--as", as_identity,
+    ], timeout=180, cwd=file_info["cli_cwd"])
 
 
 def resolve_target_or_exit(args, stage):
@@ -124,7 +147,7 @@ def execute_docs_fetch(args):
 
 def preflight_docs_create(args):
     auth = require_auth(args.as_identity)
-    file_info = ensure_utf8_file(args.markdown)
+    file_info = prepare_markdown_cli_file(args.markdown)
     info = risk_info("docs_create")
     ok = file_info["ok"] and bool(args.title)
     json_exit({
@@ -143,7 +166,7 @@ def preflight_docs_create(args):
 
 def execute_docs_create(args):
     auth = require_auth(args.as_identity)
-    file_info = ensure_utf8_file(args.markdown)
+    file_info = prepare_markdown_cli_file(args.markdown)
     if not file_info["ok"]:
         json_exit({
             "ok": False,
@@ -153,10 +176,10 @@ def execute_docs_create(args):
             "message": "markdown 文件检查失败，拒绝创建文档",
             "next_action": "fix_markdown_file",
         }, code=1)
-    cli_args = ["docs", "+create", "--title", args.title, "--markdown", f"@{file_info['path']}", "--as", args.as_identity]
+    cli_args = ["docs", "+create", "--title", args.title, "--markdown", file_info["cli_markdown_arg"], "--as", args.as_identity]
     if args.wiki_node:
         cli_args[2:2] = ["--wiki-node", args.wiki_node]
-    result = run_cli(cli_args, timeout=180)
+    result = run_cli(cli_args, timeout=180, cwd=file_info["cli_cwd"])
     created_target = extract_created_doc_reference(result.get("stdout", "")) if result["ok"] else {"ok": False}
     verify = fetch_doc(created_target["doc_arg"], args.as_identity, "pretty") if created_target.get("ok") else {"ok": False, "stdout": "", "stderr": "created target unresolved"}
     title = infer_title_from_fetch_output(verify.get("stdout", ""))
@@ -188,7 +211,7 @@ def preflight_docs_update_overwrite(args):
     info = risk_info("docs_update_overwrite")
     fetch = fetch_doc(target["doc_arg"], args.as_identity, "pretty")
     title = infer_title_from_fetch_output(fetch.get("stdout", ""))
-    file_info = ensure_utf8_file(args.markdown)
+    file_info = prepare_markdown_cli_file(args.markdown)
     ok = fetch["ok"] and file_info["ok"]
     json_exit({
         "ok": ok,
@@ -225,7 +248,7 @@ def execute_docs_update_overwrite(args):
             "confirm_phrase": "确认覆盖该 Feishu 文档",
             "next_action": "ask_user_confirmation",
         }, code=1)
-    file_info = ensure_utf8_file(args.markdown)
+    file_info = prepare_markdown_cli_file(args.markdown)
     if not file_info["ok"]:
         json_exit({
             "ok": False,
@@ -235,7 +258,9 @@ def execute_docs_update_overwrite(args):
             "message": "markdown 文件检查失败，拒绝覆盖更新",
             "next_action": "fix_markdown_file",
         }, code=1)
-    update = run_cli(["docs", "+update", "--doc", target["doc_arg"], "--mode", "overwrite", "--markdown", f"@{file_info['path']}", "--as", args.as_identity], timeout=180)
+    update = update_doc_overwrite(target["doc_arg"], file_info, args.as_identity)
+    if not update["ok"] and "--command is required" in (update.get("stdout", "") + update.get("stderr", "")):
+        update = update_doc_overwrite_v2(target["doc_arg"], file_info, args.as_identity)
     verify = fetch_doc(target["doc_arg"], args.as_identity, "pretty") if update["ok"] else {"ok": False, "stdout": "", "stderr": "update failed"}
     title = infer_title_from_fetch_output(verify.get("stdout", ""))
     json_exit({
