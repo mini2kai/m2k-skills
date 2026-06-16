@@ -120,6 +120,7 @@ metadata:
 - 当前操作：读取、创建、覆盖更新、验证或授权。
 - 需要输入：飞书文档链接、`doc_token`、`wiki_node_token`、本地 markdown 文件路径。
 - 授权方式：打开 verification URL，确认 user code；不要提供密码、token、cookie。
+- 授权 URL：如果脚本返回 `verification_url`，必须原样展示或打开；如果没有返回 URL 或等待超时，必须停下来告诉使用者需要协助授权诊断，不得静默重试或继续等待。
 - 风险影响：覆盖、删除、移动、权限类操作必须说明影响范围和可恢复性。
 - 验证方式：执行后如何证明成功，例如 fetch 验证、标题、目标 token、内容 preview。
 

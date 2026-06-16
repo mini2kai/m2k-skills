@@ -67,6 +67,9 @@ def login(args):
             "ok": False,
             "stage": "auth_login_start",
             "message": start.get("stderr") or start.get("stdout") or "无法发起 device login",
+            "requires_user_action": True,
+            "operator_instruction": "没有拿到 verification URL。不要继续等待；把该错误明确告诉使用者，并请使用者协助检查 lark-cli auth login 输出。",
+            "diagnostics": start.get("diagnostics"),
             "next_action": "inspect_lark_cli_auth_help",
         }, code=1)
 
