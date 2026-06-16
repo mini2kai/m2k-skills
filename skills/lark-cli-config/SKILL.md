@@ -28,6 +28,7 @@ metadata:
 - 环境诊断：`python scripts/env_diagnostics.py`
 - 授权状态：`python scripts/auth_manager.py status`
 - 引导登录：`python scripts/auth_manager.py login --domain docs,wiki,drive`（默认拿到 URL 立即返回，不等待授权完成）
+- 续接登录：`python scripts/auth_manager.py complete`（使用上一轮 login 保存的 device_code 兑换 token）
 - 登出：`python scripts/auth_manager.py logout`
 - 文档操作：`python scripts/doc_ops_wrapper.py preflight|execute --operation <operation> --target <url-or-token> ...`
 - 文档快读：`python scripts/doc_ops_wrapper.py execute --operation docs_fetch --target <doc-url> --include-text`
@@ -36,16 +37,16 @@ metadata:
 
 所有脚本输出 JSON。Agent 应读取 JSON 的 `ok`、`stage`、`target`、`diagnostics`、`next_action`、`requires_confirmation`、`requires_user_action`、`risk`、`message` 字段决定下一步。
 
-授权登录是人工参与点：当 `auth_manager.py login` 返回 `stage=auth_login_user_action_required` 或 `requires_user_action=true` 时，必须立即把完整 `verification_url` 和 `user_code` 明确展示给使用者，或用可用浏览器工具打开该 URL，然后暂停等待使用者完成授权。不得在没有展示 URL 的情况下继续后台等待；只有 URL 已展示且使用者要求代等时，才可加 `--wait`。
+授权登录是人工参与点：当 `auth_manager.py login` 返回 `stage=auth_login_user_action_required` 或 `requires_user_action=true` 时，必须立即把完整 `verification_url` 和 `user_code` 明确展示给使用者，或用可用浏览器工具打开该 URL，然后暂停等待使用者完成授权。脚本会保存本轮 `device_code` 到本地状态文件；使用者授权完成后运行 `auth_manager.py complete` 续接兑换 token。不得在没有展示 URL 的情况下继续后台等待；只有 URL 已展示且使用者要求代等时，才可加 `--wait`。
 
 ## 文档读写主链路
 
 所有 Feishu 文档读写按同一条链路执行：
 
 1. `env_diagnostics`：确认 `lark-cli` 或 `npx @larksuite/cli` 可用，记录 runner、路径、版本和阻塞项。
-2. `auth_status`：确认 `user` 授权有效，读取 `identity`、`tokenStatus`、`expiresAt`、`expiresInSeconds`。
+2. `auth_status`：确认 `user` 授权有效，读取 `identity`、`tokenStatus`、`expiresAt`、`expiresInSeconds`。脚本兼容 `lark-cli auth status --verify` 的顶层旧 schema 和 `identities.user` 嵌套新 schema；不要因为旧字段缺失就重复要求授权。
 3. `target_resolve`：通过 `--target` 接收完整 URL、`doc_token` 或 `wiki_node_token`，由脚本归一化目标。
-4. `preflight`：读取目标、检查本地 markdown、判断风险和是否需要使用者确认。
+4. `preflight`：读取目标、检查本地 markdown、判断风险和是否需要使用者确认。wrapper 会把绝对 markdown 路径转换成 `cwd=<文件目录>` 和相对 `@<文件名>`，满足 lark-cli 的 `@file` 限制。
 5. `execute`：执行读写操作。高风险写入没有明确确认不得执行。
 6. `post_verify`：写入后必须 fetch/read 验证，并在 JSON 里返回 `fetch_verify_ok`、`title` 和目标信息。
 
@@ -98,12 +99,19 @@ metadata:
 
 1. 运行 `scripts/env_diagnostics.py`，确认 `lark-cli` 可用，并检查 runner、版本、warnings、blocking。
 2. 运行 `scripts/auth_manager.py status`，确认 `identity` 和 `tokenStatus`。
-3. 如果没有 `user` 授权，运行 `scripts/auth_manager.py login --domain docs,wiki,drive`。该命令默认会在拿到 verification URL 后退出；必须明确告诉使用者打开该 URL、确认 user code、授权指定 Feishu 能力，并停下来等待使用者完成。不要要求输入密码、token 或 cookie。
-4. 使用者完成授权后，运行 `scripts/auth_manager.py status` 验证；如使用者明确要求代等，才运行 `scripts/auth_manager.py login --domain docs,wiki,drive --wait`。
+3. 如果没有 `user` 授权，运行 `scripts/auth_manager.py login --domain docs,wiki,drive`。该命令默认会在拿到 verification URL 后退出并保存可续接状态；必须明确告诉使用者打开该 URL、确认 user code、授权指定 Feishu 能力，并停下来等待使用者完成。不要要求输入密码、token 或 cookie。
+4. 使用者完成授权后，先运行 `scripts/auth_manager.py complete` 兑换 token，再运行 `scripts/auth_manager.py status` 验证；如使用者明确要求代等，才运行 `scripts/auth_manager.py login --domain docs,wiki,drive --wait`。
 5. 读取类操作可用 `doc_ops_wrapper.py execute --operation docs_fetch --target <url-or-token>` 直接执行。
 6. 写入、覆盖、移动、删除、权限变更先运行 `doc_ops_wrapper.py preflight`。
 7. 如果返回 `requires_confirmation: true`，必须向使用者展示目标、风险、影响和验证方式，等待明确确认后才能执行 `--confirmed`。
 8. 写入后必须执行 fetch/read 验证。
+
+## 兼容性处理
+
+- `auth_manager.py status` 已兼容 `lark-cli` 旧版顶层 `tokenStatus` 和新版 `identities.user.tokenStatus`。如果脚本返回 `ok=true`，直接继续，不再手工解析 raw CLI 输出。
+- `auth_manager.py login` 会保存本轮 device login 状态；用户授权后优先运行 `auth_manager.py complete`，不要重新运行 login 导致旧授权链接失效。
+- `doc_ops_wrapper.py` 会自动处理 Windows 绝对路径、中文文件名和 lark-cli `@file` 相对路径要求；调用方继续传原始 markdown 路径即可。
+- 覆盖更新默认使用当前稳定的 `docs +update --mode overwrite --markdown @file`。若 CLI 返回 `--command is required`，wrapper 会降级到 v2 参数 `--command overwrite --content @file --doc-format markdown`。
 
 ## 使用者交互规则
 

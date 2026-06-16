@@ -170,7 +170,7 @@ def classify_cli_error(stdout="", stderr=""):
     }
 
 
-def run_cli(args, timeout=60):
+def run_cli(args, timeout=60, cwd=None):
     cli = resolve_lark_cli_command()
     cmd = cli["base_cmd"] + args
     try:
@@ -183,11 +183,13 @@ def run_cli(args, timeout=60):
             stderr=subprocess.PIPE,
             timeout=timeout,
             shell=False,
+            cwd=str(cwd) if cwd else None,
         )
     except FileNotFoundError as exc:
         return {
             "ok": False,
             "command": mask_command(cmd),
+            "cwd": str(cwd) if cwd else None,
             "runner": cli["runner"],
             "runner_path": cli["path"],
             "exit_code": None,
@@ -200,6 +202,7 @@ def run_cli(args, timeout=60):
         return {
             "ok": False,
             "command": mask_command(cmd),
+            "cwd": str(cwd) if cwd else None,
             "runner": cli["runner"],
             "runner_path": cli["path"],
             "exit_code": None,
@@ -213,6 +216,7 @@ def run_cli(args, timeout=60):
     return {
         "ok": proc.returncode == 0,
         "command": mask_command(cmd),
+        "cwd": str(cwd) if cwd else None,
         "runner": cli["runner"],
         "runner_path": cli["path"],
         "exit_code": proc.returncode,
@@ -259,16 +263,59 @@ def _seconds_until(expires_at):
         return None
 
 
+def _extract_identity_status(data, required_identity="user"):
+    identities = data.get("identities") if isinstance(data.get("identities"), dict) else {}
+    preferred = data.get("identity")
+    if required_identity == "auto":
+        names = []
+        if preferred:
+            names.append(preferred)
+        names.extend(name for name in ("user", "bot") if name not in names)
+        names.extend(name for name in identities if name not in names)
+    else:
+        names = [required_identity]
+
+    for name in names:
+        nested = identities.get(name)
+        if not isinstance(nested, dict):
+            continue
+        available = nested.get("available", True) is not False
+        verified = data.get("verified", True) is not False and nested.get("verified", True) is not False
+        token_status = nested.get("tokenStatus")
+        if not token_status and available and verified and nested.get("status") == "ready":
+            token_status = "valid"
+        return {
+            "identity": name,
+            "tokenStatus": token_status,
+            "verified": verified,
+            "available": available,
+            "expiresAt": nested.get("expiresAt"),
+            "userName": nested.get("userName") or nested.get("appName"),
+            "schema": "identities_nested",
+        }
+
+    return {
+        "identity": preferred,
+        "tokenStatus": data.get("tokenStatus"),
+        "verified": data.get("verified", True) is not False,
+        "available": True,
+        "expiresAt": data.get("expiresAt"),
+        "userName": data.get("userName"),
+        "schema": "legacy_top_level",
+    }
+
+
 def check_auth_status(required_identity="user"):
     result = run_cli(["auth", "status", "--verify"], timeout=60)
     data = parse_json_text(result.get("stdout", ""))
     if result["ok"] and isinstance(data, dict):
-        identity = data.get("identity")
-        token_status = data.get("tokenStatus")
-        verified = data.get("verified", True) is not False
+        parsed = _extract_identity_status(data, required_identity)
+        identity = parsed.get("identity")
+        token_status = parsed.get("tokenStatus")
+        verified = parsed.get("verified") is not False and parsed.get("available") is not False
         identity_ok = identity == required_identity if required_identity != "auto" else identity in {"user", "bot"}
         token_ok = token_status == "valid" and verified
-        expires_at = data.get("expiresAt")
+        expires_at = parsed.get("expiresAt")
         return {
             "ok": identity_ok and token_ok,
             "requiredIdentity": required_identity,
@@ -276,7 +323,8 @@ def check_auth_status(required_identity="user"):
             "tokenStatus": token_status,
             "expiresAt": expires_at,
             "expiresInSeconds": _seconds_until(expires_at),
-            "userName": data.get("userName"),
+            "userName": parsed.get("userName"),
+            "statusSchema": parsed.get("schema"),
             "raw": data,
             "message": f"{required_identity} 授权有效" if identity_ok and token_ok else data.get("note", f"{required_identity} 授权不可用"),
         }
@@ -312,6 +360,18 @@ def ensure_utf8_file(path):
         "size_bytes": file_path.stat().st_size,
         "line_count": len(content.splitlines()),
         "has_replacement_question_mark": "�" in content,
+    }
+
+
+def prepare_markdown_cli_file(path):
+    file_info = ensure_utf8_file(path)
+    if not file_info["ok"]:
+        return file_info
+    file_path = Path(file_info["path"])
+    return {
+        **file_info,
+        "cli_cwd": str(file_path.parent),
+        "cli_markdown_arg": f"@{file_path.name}",
     }
 
 
