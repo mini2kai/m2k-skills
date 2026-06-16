@@ -27,14 +27,16 @@ metadata:
 
 - 环境诊断：`python scripts/env_diagnostics.py`
 - 授权状态：`python scripts/auth_manager.py status`
-- 引导登录：`python scripts/auth_manager.py login --domain docs,wiki,drive`
+- 引导登录：`python scripts/auth_manager.py login --domain docs,wiki,drive`（默认拿到 URL 立即返回，不等待授权完成）
 - 登出：`python scripts/auth_manager.py logout`
 - 文档操作：`python scripts/doc_ops_wrapper.py preflight|execute --operation <operation> --target <url-or-token> ...`
 - 文档快读：`python scripts/doc_ops_wrapper.py execute --operation docs_fetch --target <doc-url> --include-text`
 - 表格只读：`python scripts/sheet_ops_wrapper.py preflight|execute --operation sheets_read --target <sheet-url> --include-text`
 - 本地自测：`python scripts/self_test.py`
 
-所有脚本输出 JSON。Agent 应读取 JSON 的 `ok`、`stage`、`target`、`diagnostics`、`next_action`、`requires_confirmation`、`risk`、`message` 字段决定下一步。
+所有脚本输出 JSON。Agent 应读取 JSON 的 `ok`、`stage`、`target`、`diagnostics`、`next_action`、`requires_confirmation`、`requires_user_action`、`risk`、`message` 字段决定下一步。
+
+授权登录是人工参与点：当 `auth_manager.py login` 返回 `stage=auth_login_user_action_required` 或 `requires_user_action=true` 时，必须立即把完整 `verification_url` 和 `user_code` 明确展示给使用者，或用可用浏览器工具打开该 URL，然后暂停等待使用者完成授权。不得在没有展示 URL 的情况下继续后台等待；只有 URL 已展示且使用者要求代等时，才可加 `--wait`。
 
 ## 文档读写主链路
 
@@ -96,11 +98,12 @@ metadata:
 
 1. 运行 `scripts/env_diagnostics.py`，确认 `lark-cli` 可用，并检查 runner、版本、warnings、blocking。
 2. 运行 `scripts/auth_manager.py status`，确认 `identity` 和 `tokenStatus`。
-3. 如果没有 `user` 授权，运行 `scripts/auth_manager.py login --domain docs,wiki,drive`，明确告诉使用者需要打开 verification URL、确认 user code、授权指定 Feishu 能力；不要要求输入密码、token 或 cookie。
-4. 读取类操作可用 `doc_ops_wrapper.py execute --operation docs_fetch --target <url-or-token>` 直接执行。
-5. 写入、覆盖、移动、删除、权限变更先运行 `doc_ops_wrapper.py preflight`。
-6. 如果返回 `requires_confirmation: true`，必须向使用者展示目标、风险、影响和验证方式，等待明确确认后才能执行 `--confirmed`。
-7. 写入后必须执行 fetch/read 验证。
+3. 如果没有 `user` 授权，运行 `scripts/auth_manager.py login --domain docs,wiki,drive`。该命令默认会在拿到 verification URL 后退出；必须明确告诉使用者打开该 URL、确认 user code、授权指定 Feishu 能力，并停下来等待使用者完成。不要要求输入密码、token 或 cookie。
+4. 使用者完成授权后，运行 `scripts/auth_manager.py status` 验证；如使用者明确要求代等，才运行 `scripts/auth_manager.py login --domain docs,wiki,drive --wait`。
+5. 读取类操作可用 `doc_ops_wrapper.py execute --operation docs_fetch --target <url-or-token>` 直接执行。
+6. 写入、覆盖、移动、删除、权限变更先运行 `doc_ops_wrapper.py preflight`。
+7. 如果返回 `requires_confirmation: true`，必须向使用者展示目标、风险、影响和验证方式，等待明确确认后才能执行 `--confirmed`。
+8. 写入后必须执行 fetch/read 验证。
 
 ## 使用者交互规则
 
@@ -109,6 +112,7 @@ metadata:
 - 当前操作：读取、创建、覆盖更新、验证或授权。
 - 需要输入：飞书文档链接、`doc_token`、`wiki_node_token`、本地 markdown 文件路径。
 - 授权方式：打开 verification URL，确认 user code；不要提供密码、token、cookie。
+- 授权 URL：如果脚本返回 `verification_url`，必须原样展示或打开；如果没有返回 URL 或等待超时，必须停下来告诉使用者需要协助授权诊断，不得静默重试或继续等待。
 - 风险影响：覆盖、删除、移动、权限类操作必须说明影响范围和可恢复性。
 - 验证方式：执行后如何证明成功，例如 fetch 验证、标题、目标 token、内容 preview。
 

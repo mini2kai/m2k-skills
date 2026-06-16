@@ -4,13 +4,23 @@
 
 含义：当前没有 user token，只有 bot/tenant identity。
 
-处理：运行 `scripts/auth_manager.py login --domain docs,wiki,drive`，完成后再运行 `scripts/auth_manager.py status`。
+处理：运行 `scripts/auth_manager.py login --domain docs,wiki,drive`。默认返回 `verification_url` 和 `user_code` 后立即停下，必须把 URL/code 明确展示给使用者或打开 URL，等使用者完成授权后再运行 `scripts/auth_manager.py status`。
 
 ## need_user_authorization
 
 含义：当前操作需要 user 授权。
 
-处理：启动 device login，授权完成后使用 `--as user` 重试。
+处理：启动 device login，展示 `verification_url` 和 `user_code`，等待使用者完成授权后使用 `--as user` 重试。不要在没有展示 URL 的情况下后台等待。
+
+结构化输出：`stage=auth_login_user_action_required`，`requires_user_action=true`，保留 `verification_url`、`user_code`，`next_action=authorize_in_browser`。
+
+## auth login URL missing
+
+含义：`lark-cli auth login --no-wait --json` 返回了 device login 信息，但没有可展示的 `verification_url`；或者 CLI 输出异常导致无法提取 URL。
+
+处理：立即停下来告诉使用者需要协助授权诊断，不要继续等待到超时。展示 stdout/stderr 摘要和下一步，例如检查 `lark-cli auth login --help` 或重新发起 login。
+
+结构化输出：`stage=auth_login_url_missing`，`requires_user_action=true`，`next_action=ask_user_to_help_auth_url_missing`。
 
 ## missing scope
 
@@ -24,7 +34,7 @@
 
 含义：user token 已过期或验证失败。
 
-处理：运行 `scripts/auth_manager.py login --domain docs,wiki,drive` 重新授权；不要要求使用者提供 token。
+处理：运行 `scripts/auth_manager.py login --domain docs,wiki,drive` 重新授权，拿到 URL 后交给使用者并暂停；不要要求使用者提供 token。
 
 结构化输出：`error_type=auth_expired`，`next_action=run_auth_login`。
 
@@ -56,7 +66,7 @@
 
 含义：应用后台或用户授权缺少权限。
 
-处理：展示完整 URL，等待使用者完成授权；不要自己猜 scope。
+处理：展示完整 URL，等待使用者完成授权；不要自己猜 scope。若没有完整 URL，立即停下来请使用者协助授权诊断。
 
 结构化输出：`error_type=authorization_required`，保留 `authorization_url`，`next_action=open_authorization_url`。
 

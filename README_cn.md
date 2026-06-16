@@ -40,7 +40,7 @@ M2K Skills 是在真实中文研发场景中实践 AI Agent 安全协作的产�
 | `git-trunk-workflow` | AI 短生命周期 Git 分支交付 | 禁止 force push/reset hard/删分支，commit/push 需确认 |
 | `work-orchestrator` | 全链路总控编排 | 阶段门强制先分析后实施，未授权不修改 |
 | `ai-worklog` | AI 协作日报和报工统计 | 先预览再生成，不输出敏感凭据 |
-| `lark-cli-config` | 飞书/Lark CLI 授权和文档操作 | 高风险写入需确认，先检查授权再操作 |
+| `lark-cli-config` | 飞书/Lark CLI 授权和文档操作 | 授权 URL 必须显式展示或打开，高风险写入需确认 |
 | `web-demo-publisher` | Web Demo 生成、预览和发布 | 固定端口发布，外网失败不阻塞本地 |
 | `skill-dev` | Skill 开发、验证和发布流程 | 围栏模型开发规范，commit/push/PyPI 需确认 |
 
