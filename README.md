@@ -42,7 +42,7 @@ Each skill's design rationale is documented in its own `DESIGN.md`.
 | `git-trunk-workflow` | AI short-lived Git branch delivery | Force push/reset hard/branch deletion forbidden; commit/push requires confirmation |
 | `work-orchestrator` | Full-chain orchestration | Phase gates enforce analysis before execution; no modification without authorization |
 | `ai-worklog` | AI collaboration daily report and timesheet | Preview before generation; no sensitive credentials in output |
-| `lark-cli-config` | Feishu/Lark CLI authorization and document operations | High-risk writes require confirmation; authorization checked before operations |
+| `lark-cli-config` | Feishu/Lark CLI authorization and document operations | Auth URLs must be shown or opened explicitly; high-risk writes require confirmation |
 | `web-demo-publisher` | Web demo generation, preview, and publishing | Fixed port publishing; external network failure doesn't block local preview |
 | `skill-dev` | Skill development, validation, and publishing workflow | Fence model development standard; commit/push/PyPI requires confirmation |
 
