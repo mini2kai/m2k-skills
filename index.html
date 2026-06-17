@@ -177,6 +177,65 @@
 
     .btn.primary:hover { background: var(--accent-hover); }
 
+    .install-section {
+      margin: 0 auto;
+      max-width: 640px;
+      padding: 36px 0 0;
+      text-align: center;
+    }
+
+    .install-label {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 12px;
+    }
+
+    .install-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 18px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 14px;
+      color: var(--ink);
+    }
+
+    .install-cmd {
+      flex: 1;
+      text-align: left;
+      word-break: break-all;
+      color: var(--accent);
+    }
+
+    .copy-btn {
+      flex-shrink: 0;
+      display: grid;
+      place-items: center;
+      width: 30px;
+      height: 30px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .copy-btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+    .install-hint {
+      margin-top: 10px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
     .skills-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -272,6 +331,17 @@
         </div>
       </section>
 
+      <section class="install-section">
+        <div class="install-label" data-i18n="install_label">Install a skill</div>
+        <div class="install-box">
+          <span class="install-cmd">uvx --from m2k-skills-tools m2k-skills-tools</span>
+          <button class="copy-btn" id="copy-btn" title="Copy command" aria-label="Copy command">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          </button>
+        </div>
+        <div class="install-hint" data-i18n="install_hint">需要 Python 3.8+ 和 uv。运行后按提示选择 skill 安装到当前项目。</div>
+      </section>
+
       <section class="skills-grid" id="skills-grid"></section>
     </main>
 
@@ -302,6 +372,8 @@
         cta_pypi: 'PyPI',
         footer_copy: 'M2K Skills — mini2kai',
         tag: 'fence-model',
+        install_label: 'Install a skill',
+        install_hint: 'Requires Python 3.8+ and uv. Run and follow the prompts to install a skill into your project.',
       },
       zh: {
         badge: '开源',
@@ -311,6 +383,8 @@
         cta_pypi: 'PyPI',
         footer_copy: 'M2K Skills — mini2kai',
         tag: '围栏模型',
+        install_label: '安装 Skill',
+        install_hint: '需要 Python 3.8+ 和 uv。运行后按提示选择 skill 安装到当前项目。',
       }
     };
 
@@ -365,6 +439,16 @@
         theme = e.matches ? 'dark' : 'light';
         applyTheme();
       }
+    });
+
+    document.getElementById('copy-btn').addEventListener('click', () => {
+      navigator.clipboard.writeText('uvx --from m2k-skills-tools m2k-skills-tools').then(() => {
+        const btn = document.getElementById('copy-btn');
+        btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+        setTimeout(() => {
+          btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+        }, 1800);
+      });
     });
 
     applyTheme();
