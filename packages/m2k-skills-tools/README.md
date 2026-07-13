@@ -7,7 +7,8 @@
 ```powershell
 uvx --from m2k-skills-tools m2k-skills-tools
 uvx --from m2k-skills-tools m2k-skills-tools status --target codex
-uvx --from m2k-skills-tools m2k-skills-tools add ai-worklog --target claude
+uvx --from m2k-skills-tools m2k-skills-tools add ai-worklog
+m2k-skills-tools add ai-delivery-hook --target claude
 ```
 
 本仓库开发调试时可以直接运行：

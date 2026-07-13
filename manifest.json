@@ -162,6 +162,23 @@
         "git",
         "powershell"
       ]
+    },
+    "ai-delivery-hook": {
+      "path": "skills/ai-delivery-hook",
+      "version": "0.1.0",
+      "description": "AI 参与代码交付时的本地 Git hook 留存围栏：active AI session 下强制校验 current/prepared 交付记录和 repo-local 文档；人工提交不阻断，下次 AI 接手时检测并补录未记录人工变更。",
+      "tags": [
+        "ai",
+        "delivery",
+        "git-hooks",
+        "audit",
+        "workflow",
+        "orchestration"
+      ],
+      "requires": [
+        "python",
+        "git"
+      ]
     }
   }
 }

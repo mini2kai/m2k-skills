@@ -1,0 +1,7 @@
+*.local.json
+*.local.jsonc
+*.local.jsonl
+logs/
+backups/
+__pycache__/
+.pytest_cache/

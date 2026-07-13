@@ -5,7 +5,7 @@
 [![GitHub stars](https://img.shields.io/github/stars/mini2kai/m2k-skills?style=social)](https://github.com/mini2kai/m2k-skills/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/mini2kai/m2k-skills?style=social)](https://github.com/mini2kai/m2k-skills/forks)
 [![GitHub issues](https://img.shields.io/github/issues/mini2kai/m2k-skills)](https://github.com/mini2kai/m2k-skills/issues)
-[![Skills](https://img.shields.io/badge/skills-8-success)](#skill-catalog)
+[![Skills](https://img.shields.io/badge/skills-9-success)](#skill-catalog)
 [![Manager](https://img.shields.io/badge/manager-m2k--skills--tools-00A6D6)](#installation)
 [![License](https://img.shields.io/badge/license-Non--Commercial-lightgrey)](#license)
 
@@ -40,6 +40,7 @@ Each skill's design rationale is documented in its own `DESIGN.md`.
 | `postgres-query` | PostgreSQL read-only queries, schema inspection, query plan analysis (low priority; prefer database MCP) | Local fallback: SQL whitelist check, dangerous keyword interception, row/timeout hard limits, credential redaction, audit log |
 | `server-docker-logs-readonly` | Server log read-only inspection | Allowlist scripts restrict paths; direct SSH/Docker commands forbidden |
 | `git-trunk-workflow` | AI short-lived Git branch delivery | Force push/reset hard/branch deletion forbidden; commit/push requires confirmation |
+| `ai-delivery-hook` | AI code delivery retention hook | Active AI session requires current/prepared records and repo-local docs; human commits pass without active session |
 | `work-orchestrator` | Full-chain orchestration | Phase gates enforce analysis before execution; no modification without authorization |
 | `ai-worklog` | AI collaboration daily report and timesheet | Preview before generation; no sensitive credentials in output |
 | `lark-cli-config` | Feishu/Lark CLI authorization and document operations | Auth URLs must be shown or opened explicitly; high-risk writes require confirmation |
