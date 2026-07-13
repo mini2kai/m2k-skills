@@ -7,7 +7,7 @@
 ```powershell
 uvx --from m2k-skills-tools m2k-skills-tools
 uvx --from m2k-skills-tools m2k-skills-tools status --target codex
-uvx --from m2k-skills-tools m2k-skills-tools add postgres-query --target claude
+uvx --from m2k-skills-tools m2k-skills-tools add ai-worklog --target claude
 ```
 
 本仓库开发调试时可以直接运行：
@@ -43,7 +43,7 @@ m2k-skills-tools
 m2k-skills-tools status
 m2k-skills-tools add ai-worklog
 m2k-skills-tools update all
-m2k-skills-tools info postgres-query
-m2k-skills-tools config postgres-query
+m2k-skills-tools info ai-worklog
+m2k-skills-tools config ai-worklog
 m2k-skills-tools doctor
 ```

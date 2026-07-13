@@ -30,17 +30,19 @@ These principles are not theoretical. The `skills/` directory contains their imp
 
 | Principle | Implementation |
 |---|---|
-| Read-only default | [postgres-query](../skills/postgres-query/) — only SELECT; DDL/DML generated, not executed |
+| Read-only default (historical/local fallback) | [postgres-query](../skills/postgres-query/) — low priority; prefer database MCP for daily database access, keep scripts as a no-MCP read-only fallback |
 | Confirmation gates | [git-trunk-workflow](../skills/git-trunk-workflow/) — commit/push requires confirmation |
 | Understand before acting | [work-orchestrator](../skills/work-orchestrator/) — phase gates enforce analysis before execution |
 | Rules follow the task | [server-docker-logs-readonly](../skills/server-docker-logs-readonly/) — allowlist scripts, no general SSH |
-| Credentials don't persist | [postgres-query](../skills/postgres-query/) — temporary connections discarded after use |
+| Credentials don't persist (historical/local fallback) | [postgres-query](../skills/postgres-query/) — temporary connections discarded after use; reference only when not using MCP |
+
+Note: `postgres-query` remains an early representative fence-model case, but since 2026-07-13 it is no longer the primary direction for database access; future database work should prefer database MCP.
 
 ## Articles
 
 | # | Title | Location |
 |---|---|---|
-| 01 | [postgres-query: Code fences over prompt prayers](../skills/postgres-query/DESIGN.md) | Updated with skill |
+| 01 | [postgres-query: Code fences over prompt prayers](../skills/postgres-query/DESIGN.md) | Historical case; low-priority maintenance |
 | 02 | (planned) | Trust boundaries vs capability boundaries |
 | 03 | (planned) | How "analyze first, don't modify" changes AI collaboration quality |
 

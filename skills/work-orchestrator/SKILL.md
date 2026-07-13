@@ -76,12 +76,12 @@ description: 仅当用户明确要求使用 work-orchestrator、启用总控编�
 
 ### 不可绕过清单
 
-当以下 Skill 可用时，对应操作**只能通过该 Skill 执行**：
+当以下能力可用时，对应操作**只能通过受控入口执行**。数据库能力优先使用当前客户端暴露的只读数据库 MCP；`postgres-query` 已标记为低优先级，仅在没有数据库 MCP 或用户明确要求本地脚本围栏时作为兜底。
 
-| 操作 | 可用 Skill | 禁止直接使用 |
+| 操作 | 可用受控入口 | 禁止直接使用 |
 |---|---|---|
 | Git 分支创建、暂存、commit、push | `git-trunk-workflow` | `git switch -c`、`git checkout -b`、`git add`、`git commit`、`git push`（分支命名由本 Skill 按 AI 临时分支命名约定决定，传入 create_branch.ps1 执行）|
-| PostgreSQL 查询 | `postgres-query` | 直接 `psql` 或手写连接代码 |
+| 数据库只读查询 | 数据库 MCP（优先）或低优先级兜底 `postgres-query` | 直接 `psql`、手写连接代码、数据库写入/DDL |
 | 服务器日志读取 | `server-docker-logs-readonly` | `ssh`、`docker exec`、`scp` |
 
 当这些 Skill 不可用时（未安装），上述原生命令可以使用，但必须先说明缺失能力并获得用户确认。
@@ -240,7 +240,7 @@ ai/<source>/<YYYYMMDD>-<type>-<topic>
 - 输出结果如何回到总控判断。
 - 安全边界或禁止动作。
 
-给数据库能力：说明要验证什么、表名/字段/条件、只读 SQL 或查询目标、预期结果如何解释。
+给数据库能力：优先交给数据库 MCP；说明要验证什么、表名/字段/条件、只读 SQL 或查询目标、预期结果如何解释。仅当没有 MCP 或用户明确要求时，才使用低优先级的 `postgres-query` 本地脚本兜底。
 
 给日志能力：说明时间范围、服务/模块、关键词/trace id/request id、需要确认的异常链路。
 
@@ -256,7 +256,7 @@ ai/<source>/<YYYYMMDD>-<type>-<topic>
 | --- | --- | --- |
 | 需求/文档读取 | description 包含 Feishu、Lark、doc、wiki、sheet、drive 等能力 | 请用户提供文档内容、截图、链接可访问方式，或临时使用可用 CLI/浏览器读取 |
 | 服务器日志读取 | description 包含 server、log、docker、readonly、incident 等能力 | 请用户提供日志片段、路径、时间范围、关键词；或输出检索命令 |
-| 数据库只读验证 | description 包含 PostgreSQL、pgsql、database、readonly、schema、query 等能力 | 询问临时连接信息和只读权限，使用本地临时查询方案 |
+| 数据库只读验证 | 优先匹配当前客户端可用的数据库 MCP；无 MCP 时才匹配低优先级 `postgres-query`（description 包含 PostgreSQL、pgsql、database、readonly、schema、query 等能力） | 询问临时连接信息和只读权限；优先建议配置/使用数据库 MCP，必要时才使用本地临时查询方案 |
 | Git 临时分支交付 | name 为 `git-trunk-workflow`，或 description 包含 Git、branch、commit、push、staging、handoff、protected 等能力 | 使用普通 Git 命令给计划，实施前逐步确认 |
 | 代码或配置实施 | description 包含相关业务域、fullstack、page、config、mapper、export、ERP 等能力 | 使用普通代码开发流程，但先明确风险和验证计划 |
 | 正式变更文档 | description 包含 change doc、技术版、业务版、飞书文档等能力 | 用户明确要求后，用普通 Markdown 输出或询问目标文档格式 |

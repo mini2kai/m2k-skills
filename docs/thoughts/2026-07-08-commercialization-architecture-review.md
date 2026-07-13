@@ -23,7 +23,7 @@
 "云端藏 system_prompt" 只对纯文本生成型 skill 有用。
 
 现有 8 个 skill 全是**安全执行/工具型**：
-- `postgres-query` 价值在 SQL 安全围栏 + 脱敏 + 审计
+- `postgres-query` 价值在 SQL 安全围栏 + 脱敏 + 审计（2026-07-13 后转为低优先级/本地兜底，日常查库优先 MCP）
 - `git-trunk-workflow` 价值在分支保护 + commit 前缀强检
 - `lark-cli-config` 价值在授权链路 + lark-cli wrapper
 - `server-docker-logs-readonly` 价值在 SSH/Docker 黑名单
@@ -95,6 +95,17 @@ value 在"做了什么、禁了什么"，不在"让 LLM 说什么话"。把这�
 2. **不统计调用**：整层 Cloudflare 后端基建（Worker + KV + D1 + 限流）对开源形态是纯粹负债——免费维护一份没人刷卡的后端，徒增两个故障面和一处 RCE 风险。可以全扔。
 
 **结论：现状够用，不搞统计后端，不加商业化层。** "实时更新"如果非加，只在 orchestrator 加一条可选 markdown 提醒，不碰脚本、不走后端、不缓存、不静默。
+
+## 2026-07-13 补充：postgres-query 暂缓维护
+
+用了数据库 MCP 之后，`postgres-query` 的日常必要性明显下降：MCP 可以直接、稳定地完成当前需要的数据库访问，甚至比本地 profile + Python 脚本更顺手。它仍然有围栏设计参考价值，但不值得继续作为高优先级能力投入。
+
+后续取舍：
+
+- 数据库访问默认走 MCP。
+- `postgres-query` 标记为低优先级，预计几乎不再主动更新。
+- 只有没有数据库 MCP、或明确需要本地 `sql_guard.py` / 审计 / 行数超时硬上限时，才把它作为兜底。
+- 文档、manifest、前端静态页和编排说明都应避免继续把它描述成默认数据库入口。
 
 ## 后续优化建议（不急，按优先级排）
 

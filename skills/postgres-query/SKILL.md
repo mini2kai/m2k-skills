@@ -1,9 +1,19 @@
 ---
 name: postgres-query
-description: 引导式 PostgreSQL/pgsql/PG 数据库连接、本机多 profile 配置、临时连接信息收集、只读查询、表结构查看和查询计划分析。Use when the user asks to query PostgreSQL data, inspect schemas/tables/indexes, run SELECT/WITH/SHOW/EXPLAIN SQL, diagnose slow PostgreSQL queries, configure reusable local database profiles, or needs guided database connection setup. 连接方式不明确时必须先询问临时连接信息；风险写入或 DDL 请求只生成 SQL，不直接执行。
+description: 低优先级/暂缓维护的 PostgreSQL/pgsql/PG 本地只读查询脚本围栏；优先使用当前客户端可用的数据库 MCP。Use only when the user explicitly asks for postgres-query/local guarded scripts/sql_guard.py/audit caps, or when no database MCP is available but PostgreSQL read-only queries, schema inspection, or EXPLAIN are still needed. 连接方式不明确时必须先询问临时连接信息；风险写入或 DDL 请求只生成 SQL，不直接执行。
 ---
 
 # PostgreSQL Query
+
+## 维护状态（低优先级）
+
+截至 2026-07-13，本 skill 暂时放一放，标记为**低优先级**。日常数据库访问建议优先使用当前客户端可用的数据库 MCP：MCP 能直接承接只读查询、结构查看和结果返回，通常比本地 profile + 脚本入口更顺手。
+
+本 skill 后续预计几乎不会主动扩展，只保留为：
+
+- 没有数据库 MCP 时的本地只读兜底
+- `sql_guard.py`、行数/超时硬上限、脱敏和审计的围栏参考
+- 用户明确要求使用 `postgres-query` 脚本时的安全执行入口
 
 ## 围栏（代码强制，不可绕过）
 

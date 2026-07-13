@@ -184,6 +184,8 @@ C:\Users\you\.codex\skills\ai-worklog\
 
 ### postgres-query
 
+> 维护状态：低优先级；日常数据库访问优先使用数据库 MCP。本节仅作为无 MCP 时的本地脚本兜底示例。
+
 ```powershell
 # 查看本地连接配置
 python .\postgres-query\scripts\pg_profiles.py
@@ -247,6 +249,6 @@ powershell -ExecutionPolicy Bypass -File .\web-demo-publisher\scripts\generate-f
 | uv | TUI 管理器运行 | 推荐 |
 | PowerShell | 安装器和部分脚本 | Windows 下是 |
 | Node.js / npx | lark-cli-config、web-demo-publisher | 按需 |
-| psycopg / psycopg2 | postgres-query | 按需 |
+| psycopg / psycopg2 | postgres-query（低优先级，本地兜底；日常查库优先 MCP） | 按需 |
 | paramiko | server-docker-logs-readonly | 按需 |
 | openpyxl | ai-worklog Excel 输出 | 按需 |
