@@ -37,7 +37,7 @@ Each skill's design rationale is documented in its own `DESIGN.md`.
 
 | Skill | Description | Safety Boundary |
 |---|---|---|
-| `postgres-query` | PostgreSQL read-only queries, schema inspection, query plan analysis | SQL whitelist check, dangerous keyword interception, row/timeout hard limits, credential redaction, audit log |
+| `postgres-query` | PostgreSQL read-only queries, schema inspection, query plan analysis (low priority; prefer database MCP) | Local fallback: SQL whitelist check, dangerous keyword interception, row/timeout hard limits, credential redaction, audit log |
 | `server-docker-logs-readonly` | Server log read-only inspection | Allowlist scripts restrict paths; direct SSH/Docker commands forbidden |
 | `git-trunk-workflow` | AI short-lived Git branch delivery | Force push/reset hard/branch deletion forbidden; commit/push requires confirmation |
 | `work-orchestrator` | Full-chain orchestration | Phase gates enforce analysis before execution; no modification without authorization |
@@ -58,7 +58,7 @@ uvx --from m2k-skills-tools m2k-skills-tools
 
 # Or single PowerShell command
 cd $HOME\.codex\skills
-irm https://raw.githubusercontent.com/mini2kai/m2k-skills/main/scripts/install.ps1 | iex; Install-CodexSkill postgres-query
+irm https://raw.githubusercontent.com/mini2kai/m2k-skills/main/scripts/install.ps1 | iex; Install-CodexSkill ai-worklog
 ```
 
 ## Repository Structure
@@ -78,7 +78,7 @@ m2k-skills/
 
 | Layer | Mechanism |
 |---|---|
-| SQL Safety | Whitelist/blacklist checks, literal masking, multi-statement rejection (`sql_guard.py`) |
+| Database safety (local fallback) | Whitelist/blacklist checks, literal masking, multi-statement rejection (`sql_guard.py`); prefer database MCP for day-to-day access |
 | Credential Protection | `redact()` masking, `passwordEnv` env var references, never persisted to disk |
 | Operation Control | Read-only default, risky operations generate-only (not executed), commit/push requires confirmation |
 | Audit | Operations and interceptions automatically logged to `*.local.jsonl` |

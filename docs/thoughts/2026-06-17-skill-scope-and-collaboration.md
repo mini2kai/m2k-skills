@@ -18,13 +18,17 @@ Skill 应该装在项目级（`项目/.claude/skills/`），而不是全局（`~
 **底层通用 skill**（基础能力，被编排层调用）：
 - `work-orchestrator` — 总控编排，动态路由
 - `git-trunk-workflow` — 安全 git 操作
-- `postgres-query` — 只读数据库
+- `postgres-query` — 只读数据库（低优先级/无 MCP 时兜底；日常查库优先数据库 MCP）
 - `server-docker-logs-readonly` — 只读日志
 
 **业务个性化 skill**（绑定特定项目/场景）：
 - `otb-*` — OTB 业务
 - `lark-cli-config` — 接飞书的项目
 - `web-demo-publisher` — 需要发布 demo 的项目
+
+### 2026-07-13 补充：数据库能力转向 MCP
+
+`postgres-query` 当时被归为底层通用 skill，但实际使用数据库 MCP 后，MCP 已经可以更自然地承接只读查询、结构查看和结果返回。后续不再把 `postgres-query` 当作必须持续演进的默认数据库入口，而是标记为低优先级，只在没有 MCP 或需要本地 `sql_guard.py` 围栏审计时兜底。
 
 ## Description 是路由的唯一依据
 

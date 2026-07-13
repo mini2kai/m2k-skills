@@ -35,7 +35,7 @@ M2K Skills 是在真实中文研发场景中实践 AI Agent 安全协作的产�
 
 | Skill | 说明 | 安全边界 |
 |---|---|---|
-| `postgres-query` | PostgreSQL 只读查询、结构查看、查询计划分析 | SQL 白名单检查、危险关键字拦截、行数/超时硬上限、凭据脱敏、审计日志 |
+| `postgres-query` | PostgreSQL 只读查询、结构查看、查询计划分析（低优先级，建议优先使用数据库 MCP） | 本地兜底：SQL 白名单检查、危险关键字拦截、行数/超时硬上限、凭据脱敏、审计日志 |
 | `server-docker-logs-readonly` | 服务器日志只读排查 | 白名单脚本限定路径，禁止 SSH/Docker 直接命令 |
 | `git-trunk-workflow` | AI 短生命周期 Git 分支交付 | 禁止 force push/reset hard/删分支，commit/push 需确认 |
 | `work-orchestrator` | 全链路总控编排 | 阶段门强制先分析后实施，未授权不修改 |
@@ -56,7 +56,7 @@ uvx --from m2k-skills-tools m2k-skills-tools
 
 # 或 PowerShell 单条安装
 cd $HOME\.codex\skills
-irm https://raw.githubusercontent.com/mini2kai/m2k-skills/main/scripts/install.ps1 | iex; Install-CodexSkill postgres-query
+irm https://raw.githubusercontent.com/mini2kai/m2k-skills/main/scripts/install.ps1 | iex; Install-CodexSkill ai-worklog
 ```
 
 ## 仓库结构
@@ -77,7 +77,7 @@ m2k-skills/
 
 | 层 | 机制 |
 |---|---|
-| SQL 安全 | 白名单/黑名单检查、字面值遮蔽、多语句拒绝（`sql_guard.py`） |
+| 数据库安全（本地兜底） | 白名单/黑名单检查、字面值遮蔽、多语句拒绝（`sql_guard.py`）；日常查库优先使用数据库 MCP |
 | 凭据保护 | `redact()` 脱敏、`passwordEnv` 环境变量引用、不落盘 |
 | 操作控制 | 只读默认、风险操作只生成不执行、commit/push 需确认 |
 | 审计 | 操作和拦截事件自动写入 `*.local.jsonl` |

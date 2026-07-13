@@ -28,17 +28,19 @@ AI Agent 越来越强，但"能做"不等于"应该做"。
 
 | 原则 | 对应实践 |
 |---|---|
-| 默认只读 | [postgres-query](../skills/postgres-query/) — 只跑 SELECT，DDL/DML 只生成不执行 |
+| 默认只读（历史/本地兜底） | [postgres-query](../skills/postgres-query/) — 低优先级；日常查库建议优先使用数据库 MCP，脚本只作为无 MCP 时的只读兜底 |
 | 确认门槛 | [git-trunk-workflow](../skills/git-trunk-workflow/) — commit/push 前必须确认 |
 | 先理解再动手 | [work-orchestrator](../skills/work-orchestrator/) — 阶段门强制先分析后实施 |
 | 规则跟着任务走 | [server-docker-logs-readonly](../skills/server-docker-logs-readonly/) — 白名单脚本，不给通用 SSH |
-| 凭据不持久化 | [postgres-query](../skills/postgres-query/) — 临时连接用完即弃，profile 用环境变量存密码 |
+| 凭据不持久化（历史/本地兜底） | [postgres-query](../skills/postgres-query/) — 临时连接用完即弃，profile 用环境变量存密码；仅在不用 MCP 时参考 |
+
+备注：`postgres-query` 仍然是围栏模型的早期代表案例，但从 2026-07-13 起不再作为数据库访问的主要方向；后续查库优先交给数据库 MCP。
 
 ## 文章
 
 | # | 标题 | 位置 |
 |---|---|---|
-| 01 | [postgres-query：用代码围栏替代提示词祈祷](../skills/postgres-query/DESIGN.md) | 随 skill 更新 |
+| 01 | [postgres-query：用代码围栏替代提示词祈祷](../skills/postgres-query/DESIGN.md) | 历史案例；低优先级维护 |
 | 02 | (待写) | 信任边界 vs 能力边界：AI Agent 安全的真正问题 |
 | 03 | (待写) | "先分析不修改"如何改变 AI 协作质量 |
 

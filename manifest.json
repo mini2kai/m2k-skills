@@ -25,8 +25,8 @@
     },
     "postgres-query": {
       "path": "skills/postgres-query",
-      "version": "0.2.1",
-      "description": "PostgreSQL/Greenplum 只读查询、结构查看、查询计划分析。代码围栏强制 SQL 安全检查、输出行数/超时硬上限、凭据脱敏和审计留痕；风险操作只生成 SQL 不执行。",
+      "version": "0.2.2",
+      "description": "低优先级/本地兜底的 PostgreSQL/Greenplum 只读查询、结构查看、查询计划分析；日常数据库访问建议优先使用数据库 MCP。脚本围栏仍强制 SQL 安全检查、输出行数/超时硬上限、凭据脱敏和审计留痕；风险操作只生成 SQL 不执行。",
       "tags": [
         "postgresql",
         "pgsql",
@@ -36,17 +36,20 @@
         "readonly",
         "schema",
         "explain",
+        "mcp-fallback",
+        "low-priority",
         "profiles"
       ],
       "requires": [
         "python",
-        "psycopg or psycopg2",
-        "edit skills/postgres-query/scripts/connections.local.json for reusable profiles"
+        "database MCP preferred for day-to-day access",
+        "psycopg or psycopg2 for local fallback scripts",
+        "edit skills/postgres-query/scripts/connections.local.json only for reusable fallback profiles"
       ]
     },
     "skill-dev": {
       "path": "skills/skill-dev",
-      "version": "0.3.1",
+      "version": "0.3.2",
       "description": "围栏模型 Skill 开发规范：识别围栏与自由区、独立安全模块、测试、DESIGN.md、版本管理、事故案例沉淀和 GitHub/PyPI 发布流程。",
       "tags": [
         "codex",
@@ -86,8 +89,8 @@
     },
     "work-orchestrator": {
       "path": "skills/work-orchestrator",
-      "version": "0.2.4",
-      "description": "手动触发的中文全链路总控编排 Skill：先分析不修改，动态检查当前可用 Skill，完成证据收集、影响评估、方案设计、验证计划；负责 AI 临时分支命名约定（ai/<source>/<date>-<type>-<topic>）；用户授权后交接 Git 安全执行、代码实施、数据库/日志验证和交付收口。",
+      "version": "0.2.5",
+      "description": "手动触发的中文全链路总控编排 Skill：先分析不修改，动态检查当前可用 Skill，完成证据收集、影响评估、方案设计、验证计划；负责 AI 临时分支命名约定（ai/<source>/<date>-<type>-<topic>）；用户授权后交接 Git 安全执行、代码实施、数据库 MCP 优先/本地脚本兜底的只读验证、日志验证和交付收口。",
       "tags": [
         "orchestration",
         "planning",
