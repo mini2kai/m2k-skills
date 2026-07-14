@@ -33,7 +33,7 @@ These principles are not theoretical. The `skills/` directory contains their imp
 | Read-only default (historical/local fallback) | [postgres-query](../skills/postgres-query/) — low priority; prefer database MCP for daily database access, keep scripts as a no-MCP read-only fallback |
 | Confirmation gates | [git-trunk-workflow](../skills/git-trunk-workflow/) — commit/push requires confirmation |
 | AI delivery memory | [ai-delivery-hook](../skills/ai-delivery-hook/) — active AI sessions require repo-local delivery records while human commits remain unblocked |
-| Understand before acting | [work-orchestrator](../skills/work-orchestrator/) — phase gates enforce analysis before execution |
+| Understand before acting | [work-orchestrator](../skills/work-orchestrator/) — phase gates enforce analysis before execution and route code tasks into AI delivery retention |
 | Rules follow the task | [server-docker-logs-readonly](../skills/server-docker-logs-readonly/) — allowlist scripts, no general SSH |
 | Credentials don't persist (historical/local fallback) | [postgres-query](../skills/postgres-query/) — temporary connections discarded after use; reference only when not using MCP |
 
