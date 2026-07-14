@@ -95,3 +95,95 @@ GitLab 旧参考实现已归档，不建议新项目采用；社区方案里 `ze
 - 高风险动作（merge、release、删分支、push、写文件）即使由 MCP 执行，也要保留用户确认。
 
 因此，当前不建议把 `git-trunk-workflow` 改成“低优先级”。建议下一步是新增一份 MCP 配置模板和能力矩阵，把平台对象先 MCP 化，把本地 Git 写操作继续留在受控 skill 中。
+
+## 2026-07-14 15:44:30 +0800｜进一步澄清：Git MCP 和 git-trunk-workflow 各自都有价值
+
+### 问题
+
+进一步讨论后确认：GitLab MCP 确实可以通过 GitLab API 创建分支、修改文件、提交远程变更、创建 MR，甚至在权限允许时合并 MR。那么它和 `git-trunk-workflow` 的区别是什么？是否意味着本地 Git skill 可以被废掉？
+
+### 澄清
+
+结论是：Git MCP / GitLab MCP 和 `git-trunk-workflow` 各自都有价值，不是简单替代关系。
+
+更准确的分工是：
+
+```text
+Git MCP / GitLab MCP / GitHub MCP：
+负责“平台层”——查项目、查权限、查 MR/Issue/CI、创建 MR、评论、合并申请等。
+
+git-trunk-workflow：
+负责“本地交付层”——本地建分支、改代码、显式暂存、commit、push 非保护分支、防误操作。
+```
+
+### GitLab MCP 更适合的事情
+
+GitLab MCP 直接连 GitLab API，适合处理远程平台数据和平台对象：
+
+- 查 GitLab 上有哪些项目；
+- 查某个 group 下有多少仓库；
+- 查我对某个仓库是什么权限；
+- 查 MR、Issue、Pipeline、CI 日志；
+- 创建 MR；
+- 评论 MR；
+- 查看 reviewer 和 review 状态；
+- 小范围修改远程文件或创建远程提交。
+
+它的优势是：不需要本地 clone 仓库，就可以直接访问 GitLab 平台数据。
+
+### git-trunk-workflow 更适合的事情
+
+`git-trunk-workflow` 更适合本地真实开发和交付：
+
+- 本地创建安全分支；
+- 防止在 `main` / `master` / `dev` 等保护分支上直接提交；
+- 显式暂存指定文件，避免 `git add .` 带入无关文件；
+- 检查 commit message；
+- 禁止 force push；
+- push 非保护分支；
+- 留审计记录；
+- 生成交接摘要。
+
+它的优势是：本地有完整工作区、依赖、测试、diff 和提交控制，适合真实代码修改，而不是只改远程单个文件。
+
+### 推荐组合流程
+
+```text
+1. GitLab MCP
+   查项目、查权限、查默认分支、查已有 MR。
+
+2. git-trunk-workflow
+   本地拉分支、改代码、显式暂存、commit、push 到远程临时分支。
+
+3. GitLab MCP
+   创建 MR、查看 pipeline、评论、跟踪 review 状态。
+```
+
+这个组合比单独用 MCP 直接改远程文件更稳，也比只用本地 Git skill 忽略平台对象更完整。
+
+### 简单对比
+
+| 场景 | 推荐入口 |
+|---|---|
+| 查 GitLab 项目权限 | GitLab MCP |
+| 查 group 下有哪些仓库 | GitLab MCP |
+| 查 MR / Issue / Pipeline | GitLab MCP |
+| 创建 MR | GitLab MCP |
+| 本地创建开发分支 | `git-trunk-workflow` |
+| 本地修改代码后 commit | `git-trunk-workflow` |
+| 防止误提交到保护分支 | `git-trunk-workflow` |
+| push 当前本地分支 | `git-trunk-workflow` |
+| 合并 MR | GitLab MCP 可以做，但必须额外确认 |
+
+### 当前判断
+
+当前不应该废掉 `git-trunk-workflow`。更合适的定位是：
+
+```text
+MCP 负责远程平台协作；
+skill 负责本地安全交付。
+```
+
+如果未来出现非常成熟、可配置安全策略的 Git MCP，能同时做到保护分支限制、禁止 force push、显式暂存、commit 规范校验、push 前确认、审计日志、失败不兜底执行原生命令，才可以考虑进一步替代 `git-trunk-workflow`。
+
+在当前阶段，最佳方案是两者配合，而不是相互替代。
