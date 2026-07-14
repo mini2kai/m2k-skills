@@ -42,8 +42,9 @@
 ## 与专业 Skill 的关系
 
 - Git 分支、暂存、commit、push：交给 `git-trunk-workflow`。
+- GitHub/GitLab/Gitee issue、PR/MR、review、CI、release 等平台对象：优先交给对应 MCP。
 - AI 代码交付留存：交给 `ai-delivery-hook`。
-- 数据库日常只读验证：优先用数据库 MCP；本地 `postgres-query` 只做低优先级兜底。
+- 数据库日常只读验证：优先用数据库 MCP；本地 `postgres-query` 仍作为受控脚本方案可用。
 - 服务器日志读取：交给 `server-docker-logs-readonly`。
 
 专业 Skill 返回阻断时，不能改用原生命令绕过；应停住并复述错误和下一步选项。

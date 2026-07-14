@@ -37,9 +37,9 @@ Each skill's design rationale is documented in its own `DESIGN.md`.
 
 | Skill | Description | Safety Boundary |
 |---|---|---|
-| `postgres-query` | PostgreSQL read-only queries, schema inspection, query plan analysis (low priority; prefer database MCP) | Local fallback: SQL whitelist check, dangerous keyword interception, row/timeout hard limits, credential redaction, audit log |
+| `postgres-query` | PostgreSQL read-only queries, schema inspection, query plan analysis (still used; configure database MCP first when available) | Local guarded scripts: SQL whitelist check, dangerous keyword interception, row/timeout hard limits, credential redaction, audit log |
 | `server-docker-logs-readonly` | Server log read-only inspection | Allowlist scripts restrict paths; direct SSH/Docker commands forbidden |
-| `git-trunk-workflow` | AI short-lived Git branch delivery | Force push/reset hard/branch deletion forbidden; commit/push requires confirmation |
+| `git-trunk-workflow` | AI short-lived local Git branch delivery; GitHub/GitLab/Gitee platform objects prefer MCP | Force push/reset hard/branch deletion forbidden; explicit staging; commit/push requires confirmation |
 | `ai-delivery-hook` | AI code delivery retention hook | Active AI session requires current/prepared records and repo-local docs; human commits pass without active session |
 | `work-orchestrator` | Full-chain orchestration | Phase gates enforce analysis before execution; code tasks can auto-orchestrate AI delivery retention after authorization |
 | `ai-worklog` | AI collaboration daily report and timesheet | Preview before generation; no sensitive credentials in output |
@@ -79,9 +79,9 @@ m2k-skills/
 
 | Layer | Mechanism |
 |---|---|
-| Database safety (local fallback) | Whitelist/blacklist checks, literal masking, multi-statement rejection (`sql_guard.py`); prefer database MCP for day-to-day access |
+| Database safety (MCP first + local scripts) | Configure database MCP first for daily access; local `sql_guard.py` provides whitelist/blacklist checks, literal masking, multi-statement rejection |
 | Credential Protection | `redact()` masking, `passwordEnv` env var references, never persisted to disk |
-| Operation Control | Read-only default, risky operations generate-only (not executed), commit/push requires confirmation |
+| Operation Control | Read-only default, risky operations generate-only (not executed), local commit/push requires confirmation; GitHub/GitLab/Gitee platform objects prefer MCP and high-risk actions need extra authorization |
 | Audit | Operations and interceptions automatically logged to `*.local.jsonl` |
 | Data Isolation | `*.local.json`/`*.local.jsonl` excluded from Git |
 

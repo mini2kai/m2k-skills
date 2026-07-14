@@ -19,6 +19,21 @@ AI 可以自由决定提交什么内容、怎么描述，但脚本物理上阻�
 - 分支叫什么名字（例如 `ai/<source>/<date>-<type>-<topic>` 格式）
 - 什么时候 push
 
+### 本地 Git 与托管平台 MCP 分层
+
+本 skill 不试图替代 GitHub/GitLab/Gitee MCP。职责边界是：
+
+| 操作类型 | 推荐入口 |
+|---|---|
+| 本地分支创建、显式暂存、commit、push | `git-trunk-workflow` |
+| 保护分支、防 force push、审计留痕 | `git-trunk-workflow` |
+| GitHub issue / PR / review / actions | GitHub MCP |
+| GitLab issue / MR / pipeline | GitLab MCP |
+| Gitee issue / PR / 仓库对象 | Gitee MCP |
+| 合并 PR/MR、删分支、release 发布 | MCP 可做，但必须额外确认 |
+
+关键原则：MCP 处理远端平台对象，本 skill 处理本地 Git 写操作。即使未来配置了通用 Git MCP，也不能用它绕过本 skill 的保护分支、显式暂存、禁 force push 和审计围栏。
+
 ## 实现思路
 
 ### 1. 保护分支注册表
@@ -96,6 +111,7 @@ AI 可以自由决定提交什么内容、怎么描述，但脚本物理上阻�
 - **合并/回灌策略指南**：模型能根据上下文评估
 - **验证清单格式**：模型自己决定验证什么
 - **分支生命周期管理细节**：模型能给清理建议
+- **GitHub/GitLab/Gitee 平台流程模板**：平台对象交给对应 MCP，不塞进本地 Git skill
 - **平台配置**（openai.yaml）：已废弃
 - **push 时强制 `ai/*` 前缀**：替换为保护分支检查，这才是真正的安全不变量
 - **创建时强制 `ai/*` 命名格式**：上移到编排层作为可选约定

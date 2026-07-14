@@ -1,19 +1,34 @@
 ---
 name: postgres-query
-description: 低优先级/暂缓维护的 PostgreSQL/pgsql/PG 本地只读查询脚本围栏；优先使用当前客户端可用的数据库 MCP。Use only when the user explicitly asks for postgres-query/local guarded scripts/sql_guard.py/audit caps, or when no database MCP is available but PostgreSQL read-only queries, schema inspection, or EXPLAIN are still needed. 连接方式不明确时必须先询问临时连接信息；风险写入或 DDL 请求只生成 SQL，不直接执行。
+description: PostgreSQL/pgsql/PG 本地只读查询脚本围栏；当前仍在使用，但建议优先配置当前客户端可用的数据库 MCP。Use when the user explicitly asks for postgres-query/local guarded scripts/sql_guard.py/audit caps, when no database MCP is available, or when PostgreSQL read-only queries, schema inspection, or EXPLAIN need local code-enforced guards. 连接方式不明确时必须先询问临时连接信息；风险写入或 DDL 请求只生成 SQL，不直接执行。
 ---
 
 # PostgreSQL Query
 
-## 维护状态（低优先级）
+## 使用定位：仍在使用，MCP 优先
 
-截至 2026-07-13，本 skill 暂时放一放，标记为**低优先级**。日常数据库访问建议优先使用当前客户端可用的数据库 MCP：MCP 能直接承接只读查询、结构查看和结果返回，通常比本地 profile + 脚本入口更顺手。
+本 skill 当前仍作为 PostgreSQL/Greenplum 的本地受控查询方案使用。它的核心价值是 `sql_guard.py`、行数/超时硬上限、凭据脱敏和审计留痕。
 
-本 skill 后续预计几乎不会主动扩展，只保留为：
+新环境和日常查库建议优先配置数据库 MCP；没有 MCP、用户明确要求使用本地脚本、或需要本地围栏审计时，再使用 `postgres-query`。
 
-- 没有数据库 MCP 时的本地只读兜底
-- `sql_guard.py`、行数/超时硬上限、脱敏和审计的围栏参考
-- 用户明确要求使用 `postgres-query` 脚本时的安全执行入口
+当前推荐的数据库 MCP 示例（真实 DSN 不要提交到 Git）：
+
+```json
+{
+  "mcp": {
+    "servers": {
+      "dazzle_dev": {
+        "type": "stdio",
+        "command": "npx",
+        "args": ["-y", "@modelcontextprotocol/server-postgres", "<POSTGRES_DSN>"],
+        "timeoutMs": 30000
+      }
+    }
+  }
+}
+```
+
+项目级配置路径优先用 `<repo>/.zcode/config.json`；用户级私密配置放 `~/.zcode/cli/config.json`。详见 `references/connection.md`。
 
 ## 围栏（代码强制，不可绕过）
 

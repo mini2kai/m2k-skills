@@ -2,11 +2,11 @@
 
 [中文版](./DESIGN_cn.md)
 
-## Maintenance Status (2026-07-13)
+## Usage Positioning (Revised 2026-07-14)
 
-This skill is now on hold and marked **low priority**. Day-to-day database access should prefer the database MCP available in the client: MCP can already replace, and often improve on, local profile + Python script workflows for read-only queries, schema inspection, and result retrieval.
+This skill is still in use: it is the local guarded script path for PostgreSQL/Greenplum, with durable value in `sql_guard.py`, row/timeout hard caps, credential redaction, and audit logging.
 
-`postgres-query` remains useful as a historical fence-model case study and as a local fallback when no database MCP is available. Its durable value is still `sql_guard.py`, row/timeout hard caps, credential redaction, and audit logging — but it is no longer the default direction for database access.
+The updated direction is not to retire it, but to **prefer configuring a database MCP first**. MCP is better suited for daily read-only queries, schema inspection, and result retrieval. Use `postgres-query` when no MCP is available, when the user explicitly asks for the local scripts, or when local fence/audit behavior is required.
 
 ## Problem
 

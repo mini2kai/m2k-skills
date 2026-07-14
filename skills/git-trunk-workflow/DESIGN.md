@@ -21,6 +21,21 @@ This skill is a **safe Git execution layer** only. It enforces technical safety 
 - What to name the branch (e.g. `ai/<source>/<date>-<type>-<topic>`)
 - When to push
 
+### Local Git vs Hosting Platform MCP
+
+This skill does not try to replace GitHub/GitLab/Gitee MCPs. The responsibility boundary is:
+
+| Operation type | Recommended entry |
+|---|---|
+| Local branch creation, explicit staging, commit, push | `git-trunk-workflow` |
+| Protected branches, no force push, audit trail | `git-trunk-workflow` |
+| GitHub issues / PRs / reviews / actions | GitHub MCP |
+| GitLab issues / MRs / pipelines | GitLab MCP |
+| Gitee issues / pull requests / repository objects | Gitee MCP |
+| Merging PR/MR, deleting branches, publishing releases | MCP may perform it, but requires extra confirmation |
+
+Core principle: MCP handles remote hosting-platform objects; this skill handles local Git writes. Even if a generic Git MCP is configured later, it must not bypass this skill's protected-branch, explicit-staging, no-force-push, and audit fences.
+
 ## Implementation
 
 ### 1. Protected Branch Registry
@@ -98,6 +113,7 @@ When `push_branch.ps1` fails due to proxy/network issues, it outputs a `next_act
 - **Merge/backport strategy guide**: model can assess based on context
 - **Validation checklist format**: model decides what to verify
 - **Branch lifecycle management details**: model can suggest cleanup
+- **GitHub/GitLab/Gitee platform workflow templates**: platform objects belong to the corresponding MCP, not this local Git skill
 - **Platform config** (openai.yaml): obsolete
 - **`ai/*` prefix enforcement on push**: replaced by protected-branch check, which is the actual safety invariant
 - **`ai/*` naming enforcement on create**: moved to orchestration layer as an optional convention
