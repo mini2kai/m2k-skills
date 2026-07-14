@@ -89,8 +89,8 @@
     },
     "work-orchestrator": {
       "path": "skills/work-orchestrator",
-      "version": "0.2.5",
-      "description": "手动触发的中文全链路总控编排 Skill：先分析不修改，动态检查当前可用 Skill，完成证据收集、影响评估、方案设计、验证计划；负责 AI 临时分支命名约定（ai/<source>/<date>-<type>-<topic>）；用户授权后交接 Git 安全执行、代码实施、数据库 MCP 优先/本地脚本兜底的只读验证、日志验证和交付收口。",
+      "version": "0.2.6",
+      "description": "手动触发的中文全链路总控编排 Skill：先分析不修改，动态检查当前可用 Skill，完成证据收集、影响评估、方案设计、验证计划；负责 AI 临时分支命名约定（ai/<source>/<date>-<type>-<topic>）；用户授权后交接 Git 安全执行、代码实施、AI delivery 留存、数据库 MCP 优先/本地脚本兜底的只读验证、日志验证和交付收口。",
       "tags": [
         "orchestration",
         "planning",

@@ -39,7 +39,7 @@ M2K Skills 是在真实中文研发场景中实践 AI Agent 安全协作的产�
 | `server-docker-logs-readonly` | 服务器日志只读排查 | 白名单脚本限定路径，禁止 SSH/Docker 直接命令 |
 | `git-trunk-workflow` | AI 短生命周期 Git 分支交付 | 禁止 force push/reset hard/删分支，commit/push 需确认 |
 | `ai-delivery-hook` | AI 代码交付留存 hook | active AI session 下强制 current/prepared 记录和 repo-local 文档；无 active session 时人工提交放行 |
-| `work-orchestrator` | 全链路总控编排 | 阶段门强制先分析后实施，未授权不修改 |
+| `work-orchestrator` | 全链路总控编排 | 阶段门强制先分析后实施，代码类任务可在授权后自动编排 AI delivery 留存 |
 | `ai-worklog` | AI 协作日报和报工统计 | 先预览再生成，不输出敏感凭据 |
 | `lark-cli-config` | 飞书/Lark CLI 授权和文档操作 | 授权 URL 必须显式展示或打开，高风险写入需确认 |
 | `web-demo-publisher` | Web Demo 生成、预览和发布 | 固定端口发布，外网失败不阻塞本地 |
