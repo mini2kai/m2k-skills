@@ -3,7 +3,7 @@
 [![GitHub stars](https://img.shields.io/github/stars/mini2kai/m2k-skills?style=social)](https://github.com/mini2kai/m2k-skills/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/mini2kai/m2k-skills?style=social)](https://github.com/mini2kai/m2k-skills/forks)
 [![GitHub issues](https://img.shields.io/github/issues/mini2kai/m2k-skills)](https://github.com/mini2kai/m2k-skills/issues)
-[![Skills](https://img.shields.io/badge/skills-8-success)](#skill-catalog)
+[![Skills](https://img.shields.io/badge/skills-9-success)](#skill-catalog)
 [![Manager](https://img.shields.io/badge/manager-m2k--skills--tools-00A6D6)](#安装)
 [![License](https://img.shields.io/badge/license-Non--Commercial-lightgrey)](#许可证)
 
@@ -38,6 +38,7 @@ M2K Skills 是在真实中文研发场景中实践 AI Agent 安全协作的产�
 | `postgres-query` | PostgreSQL 只读查询、结构查看、查询计划分析（低优先级，建议优先使用数据库 MCP） | 本地兜底：SQL 白名单检查、危险关键字拦截、行数/超时硬上限、凭据脱敏、审计日志 |
 | `server-docker-logs-readonly` | 服务器日志只读排查 | 白名单脚本限定路径，禁止 SSH/Docker 直接命令 |
 | `git-trunk-workflow` | AI 短生命周期 Git 分支交付 | 禁止 force push/reset hard/删分支，commit/push 需确认 |
+| `ai-delivery-hook` | AI 代码交付留存 hook | active AI session 下强制 current/prepared 记录和 repo-local 文档；无 active session 时人工提交放行 |
 | `work-orchestrator` | 全链路总控编排 | 阶段门强制先分析后实施，未授权不修改 |
 | `ai-worklog` | AI 协作日报和报工统计 | 先预览再生成，不输出敏感凭据 |
 | `lark-cli-config` | 飞书/Lark CLI 授权和文档操作 | 授权 URL 必须显式展示或打开，高风险写入需确认 |

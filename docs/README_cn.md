@@ -30,6 +30,7 @@ AI Agent 越来越强，但"能做"不等于"应该做"。
 |---|---|
 | 默认只读（历史/本地兜底） | [postgres-query](../skills/postgres-query/) — 低优先级；日常查库建议优先使用数据库 MCP，脚本只作为无 MCP 时的只读兜底 |
 | 确认门槛 | [git-trunk-workflow](../skills/git-trunk-workflow/) — commit/push 前必须确认 |
+| AI 交付记忆 | [ai-delivery-hook](../skills/ai-delivery-hook/) — active AI session 下强制 repo-local 留存，人工提交不阻断 |
 | 先理解再动手 | [work-orchestrator](../skills/work-orchestrator/) — 阶段门强制先分析后实施 |
 | 规则跟着任务走 | [server-docker-logs-readonly](../skills/server-docker-logs-readonly/) — 白名单脚本，不给通用 SSH |
 | 凭据不持久化（历史/本地兜底） | [postgres-query](../skills/postgres-query/) — 临时连接用完即弃，profile 用环境变量存密码；仅在不用 MCP 时参考 |

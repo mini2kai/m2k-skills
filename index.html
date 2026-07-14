@@ -315,7 +315,7 @@
       <section class="hero">
         <div class="badge"><span class="badge-dot"></span><span data-i18n="badge">Open Source</span></div>
         <h1 data-i18n="title">Reusable AI Agent Skills with Real Safety Fences</h1>
-        <p class="lead" data-i18n="lead">Code-enforced boundaries for Git, server logs, Feishu, web publishing, orchestration, and a low-priority PostgreSQL fallback. Scripts block dangerous operations — prompts can't override.</p>
+        <p class="lead" data-i18n="lead">Code-enforced boundaries for Git, AI delivery retention, server logs, Feishu, web publishing, orchestration, and a low-priority PostgreSQL fallback. Scripts block dangerous operations — prompts can't override.</p>
         <div class="hero-actions">
           <a class="btn primary" href="https://github.com/mini2kai/m2k-skills" data-i18n="cta_github">GitHub</a>
           <a class="btn" href="https://pypi.org/project/m2k-skills-tools/" data-i18n="cta_pypi">PyPI</a>
@@ -344,6 +344,7 @@
   <script>
     const SKILLS = [
       { name: 'git-trunk-workflow', en: 'Safe Git operations with protected-branch enforcement, explicit staging, Chinese commits, and audit trail.', zh: '安全 Git 执行层：保护分支拦截、显式暂存、中文 commit、审计留痕。' },
+      { name: 'ai-delivery-hook', en: 'AI code delivery retention hook: active sessions require current/prepared records and repo-local docs; human commits pass without active sessions.', zh: 'AI 代码交付留存 hook：active session 下强制 current/prepared 记录和 repo-local 文档；人工提交放行。' },
       { name: 'postgres-query', en: 'Low-priority local PostgreSQL/Greenplum fallback; prefer database MCP for daily access. Keeps SQL whitelist, row caps, redaction, and audit.', zh: '低优先级的 PostgreSQL/Greenplum 本地兜底；日常查库优先 MCP。保留 SQL 白名单、行数上限、脱敏和审计。' },
       { name: 'server-docker-logs-readonly', en: 'Script-whitelist-only server log reading. No direct ssh/docker allowed.', zh: '脚本白名单服务器日志只读查询，不允许直接 ssh/docker。' },
       { name: 'work-orchestrator', en: 'Manual-trigger orchestration: analyze first, then authorize implementation with evidence-based workflow.', zh: '手动触发总控编排：先分析后实施，证据驱动的全链路工作流。' },
@@ -368,7 +369,7 @@
       zh: {
         badge: '开源',
         title: '可复用的 AI Agent Skills，代码级安全围栏',
-        lead: '代码强制的安全边界，覆盖 Git、服务器日志、飞书、Web 发布、编排，以及低优先级的 PostgreSQL 本地兜底。脚本拦截危险操作，提示词无法绕过。',
+        lead: '代码强制的安全边界，覆盖 Git、AI 交付留存、服务器日志、飞书、Web 发布、编排，以及低优先级的 PostgreSQL 本地兜底。脚本拦截危险操作，提示词无法绕过。',
         cta_github: 'GitHub',
         cta_pypi: 'PyPI',
         footer_copy: 'M2K Skills — mini2kai',

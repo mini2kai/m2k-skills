@@ -150,6 +150,7 @@ python $HOME\.codex\skills\.system\skill-installer\scripts\install-skill-from-gi
 python $HOME\.codex\skills\.system\skill-installer\scripts\install-skill-from-github.py --repo mini2kai/m2k-skills --path skills/git-trunk-workflow
 python $HOME\.codex\skills\.system\skill-installer\scripts\install-skill-from-github.py --repo mini2kai/m2k-skills --path skills/web-demo-publisher
 python $HOME\.codex\skills\.system\skill-installer\scripts\install-skill-from-github.py --repo mini2kai/m2k-skills --path skills/work-orchestrator
+python $HOME\.codex\skills\.system\skill-installer\scripts\install-skill-from-github.py --repo mini2kai/m2k-skills --path skills/ai-delivery-hook
 ```
 
 ---
@@ -233,6 +234,18 @@ powershell -ExecutionPolicy Bypass -File .\web-demo-publisher\scripts\generate-f
 ### git-trunk-workflow
 
 通过自然语言触发：`从 uat 拉一个 ai 分支处理这个问题`
+
+### ai-delivery-hook
+
+```powershell
+# 激活当前 Git 仓库的 AI delivery hook
+python .i-delivery-hook\scriptsctivate_project.py --repo-root .
+
+# 只读体检 hook 激活和本地状态
+python .i-delivery-hook\scripts\doctor.py --repo-root .
+```
+
+通过总编排使用时，在 AI 修改代码前 start，交付前 prepare，commit 后 finish；无 active session 时不会阻断人工提交。
 
 ### work-orchestrator
 
