@@ -16,8 +16,9 @@ dist/
 *.bak
 *.log
 
-# Codex/local backups
+# Codex/ZCode local state
 .backup/
+.zcode/
 
 # Local private scripts and server access details
 custom_script/
