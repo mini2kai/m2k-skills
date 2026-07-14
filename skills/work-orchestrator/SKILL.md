@@ -76,13 +76,14 @@ description: 仅当用户明确要求使用 work-orchestrator、启用总控编�
 
 ### 不可绕过清单
 
-当以下能力可用时，对应操作**只能通过受控入口执行**。数据库能力优先使用当前客户端暴露的只读数据库 MCP；`postgres-query` 已标记为低优先级，仅在没有数据库 MCP 或用户明确要求本地脚本围栏时作为兜底。
+当以下能力可用时，对应操作**只能通过受控入口执行**。数据库能力优先使用当前客户端暴露的只读数据库 MCP；`postgres-query` 仍作为本地受控脚本方案可用。GitHub/GitLab/Gitee 等托管平台对象优先交给对应 MCP，本地 Git 写操作仍交给 `git-trunk-workflow`。
 
 | 操作 | 可用受控入口 | 禁止直接使用 |
 |---|---|---|
 | Git 分支创建、暂存、commit、push | `git-trunk-workflow` | `git switch -c`、`git checkout -b`、`git add`、`git commit`、`git push`（分支命名由本 Skill 按 AI 临时分支命名约定决定，传入 create_branch.ps1 执行）|
+| GitHub/GitLab/Gitee 平台对象 | 对应平台 MCP（优先） | 未授权创建/合并 PR/MR、直接猜测 API、把平台 MCP 当成本地 Git 围栏兜底 |
 | AI 代码交付留存 | `ai-delivery-hook` | AI 自己口头记录、只在最终回复里说明、跳过 current/prepared/docs |
-| 数据库只读查询 | 数据库 MCP（优先）或低优先级兜底 `postgres-query` | 直接 `psql`、手写连接代码、数据库写入/DDL |
+| 数据库只读查询 | 数据库 MCP（优先）或本地受控脚本 `postgres-query` | 直接 `psql`、手写连接代码、数据库写入/DDL |
 | 服务器日志读取 | `server-docker-logs-readonly` | `ssh`、`docker exec`、`scp` |
 
 当这些 Skill 不可用时（未安装），上述原生命令可以使用，但必须先说明缺失能力并获得用户确认。
@@ -162,7 +163,7 @@ ai/<source>/<YYYYMMDD>-<type>-<topic>
 - 日志：时间范围、关键日志、trace/request id、异常堆栈。
 - 数据库：表结构、现有数据、只读 SQL、验证结论。
 - 代码：调用链、Mapper、配置、页面、异步任务、外部系统。
-- Git：当前分支、来源分支候选、工作区状态、历史提交。
+- Git：当前分支、来源分支候选、工作区状态、历史提交；如涉及托管平台，再补充 issue/PR/MR/CI/release 等平台对象证据。
 
 输出：证据清单、证据充分度、根因假设、待验证项。
 
@@ -255,11 +256,11 @@ ai/<source>/<YYYYMMDD>-<type>-<topic>
 - 输出结果如何回到总控判断。
 - 安全边界或禁止动作。
 
-给数据库能力：优先交给数据库 MCP；说明要验证什么、表名/字段/条件、只读 SQL 或查询目标、预期结果如何解释。仅当没有 MCP 或用户明确要求时，才使用低优先级的 `postgres-query` 本地脚本兜底。
+给数据库能力：优先交给数据库 MCP；说明要验证什么、表名/字段/条件、只读 SQL 或查询目标、预期结果如何解释。没有 MCP、用户明确要求、或需要本地围栏审计时，使用 `postgres-query` 本地受控脚本。
 
 给日志能力：说明时间范围、服务/模块、关键词/trace id/request id、需要确认的异常链路。
 
-给 Git 能力：说明是否需要分支、来源分支候选、任务 topic、是否允许 push、最终不合并不部署。
+给 Git 能力：说明是否需要分支、来源分支候选、任务 topic、是否允许 push、最终不合并不部署。若涉及 GitHub/GitLab/Gitee 平台对象，说明平台、仓库、issue/PR/MR id、目标动作，并优先交给对应 MCP。
 
 给 AI delivery 留存能力：说明 repo root、任务标题、任务类型、变更文件、验证结果、风险等级、文档等级；首次激活 hook 前必须携带用户授权结论。
 
@@ -273,8 +274,9 @@ ai/<source>/<YYYYMMDD>-<type>-<topic>
 | --- | --- | --- |
 | 需求/文档读取 | description 包含 Feishu、Lark、doc、wiki、sheet、drive 等能力 | 请用户提供文档内容、截图、链接可访问方式，或临时使用可用 CLI/浏览器读取 |
 | 服务器日志读取 | description 包含 server、log、docker、readonly、incident 等能力 | 请用户提供日志片段、路径、时间范围、关键词；或输出检索命令 |
-| 数据库只读验证 | 优先匹配当前客户端可用的数据库 MCP；无 MCP 时才匹配低优先级 `postgres-query`（description 包含 PostgreSQL、pgsql、database、readonly、schema、query 等能力） | 询问临时连接信息和只读权限；优先建议配置/使用数据库 MCP，必要时才使用本地临时查询方案 |
+| 数据库只读验证 | 优先匹配当前客户端可用的数据库 MCP；无 MCP 时匹配 `postgres-query`（description 包含 PostgreSQL、pgsql、database、readonly、schema、query 等能力） | 询问临时连接信息和只读权限；优先建议配置/使用数据库 MCP，必要时使用本地受控脚本方案 |
 | Git 临时分支交付 | name 为 `git-trunk-workflow`，或 description 包含 Git、branch、commit、push、staging、handoff、protected 等能力 | 使用普通 Git 命令给计划，实施前逐步确认 |
+| GitHub/GitLab/Gitee 平台协作 | 当前可用 MCP 中包含 github、gitlab、gitee、issue、PR、MR、review、CI、release 等能力 | 询问平台、仓库和目标对象；无 MCP 时建议配置 MCP，或经用户确认后使用 gh/glab/API/网页方式 |
 | AI delivery 留存 | name 为 `ai-delivery-hook`，或 description 包含 AI delivery、active session、current/prepared、repo-local docs、git hooks 等能力 | 最终 handoff 说明未启用留存，并建议安装/启用 |
 | 代码或配置实施 | description 包含相关业务域、fullstack、page、config、mapper、export、ERP 等能力 | 使用普通代码开发流程，但先明确风险和验证计划 |
 | 正式变更文档 | description 包含 change doc、技术版、业务版、飞书文档等能力 | 用户明确要求后，用普通 Markdown 输出或询问目标文档格式 |
@@ -318,6 +320,7 @@ ai/<source>/<YYYYMMDD>-<type>-<topic>
 - 若本地有 `ai-delivery-hook`，由 AI 自动检查 hook 状态；未激活时必须单独询问是否允许增量写入当前 repo 的 Git hook，用户同意后再自动执行 `activate_project.py`。
 - 若本地有 `ai-delivery-hook`，由 AI 自动执行 search/start/prepare/finish；用户不需要手动运行这些 Python 命令。
 - 若本地有适配的 Git 交付 Skill，交给它做 preflight、临时分支、提交和交接；否则使用临时 Git 方案并逐步确认。
+- 若涉及 GitHub/GitLab/Gitee issue、PR/MR、review、CI、release 等平台对象，优先交给对应 MCP；不得把平台 MCP 当作本地 Git 围栏失败后的兜底。
 - 非代码类实施，例如纯只读查库、只读日志、方案分析，不需要创建 Git 分支，也不需要开启 AI delivery session。
 - 实施完成后，代码类任务必须输出合并前交接摘要，并明确未合并长期分支、未部署。
 

@@ -35,9 +35,9 @@ M2K Skills 是在真实中文研发场景中实践 AI Agent 安全协作的产�
 
 | Skill | 说明 | 安全边界 |
 |---|---|---|
-| `postgres-query` | PostgreSQL 只读查询、结构查看、查询计划分析（低优先级，建议优先使用数据库 MCP） | 本地兜底：SQL 白名单检查、危险关键字拦截、行数/超时硬上限、凭据脱敏、审计日志 |
+| `postgres-query` | PostgreSQL 只读查询、结构查看、查询计划分析（仍在使用，建议优先配置数据库 MCP） | 本地受控脚本：SQL 白名单检查、危险关键字拦截、行数/超时硬上限、凭据脱敏、审计日志 |
 | `server-docker-logs-readonly` | 服务器日志只读排查 | 白名单脚本限定路径，禁止 SSH/Docker 直接命令 |
-| `git-trunk-workflow` | AI 短生命周期 Git 分支交付 | 禁止 force push/reset hard/删分支，commit/push 需确认 |
+| `git-trunk-workflow` | AI 短生命周期本地 Git 分支交付；GitHub/GitLab/Gitee 平台对象优先 MCP | 禁止 force push/reset hard/删分支，显式暂存，commit/push 需确认 |
 | `ai-delivery-hook` | AI 代码交付留存 hook | active AI session 下强制 current/prepared 记录和 repo-local 文档；无 active session 时人工提交放行 |
 | `work-orchestrator` | 全链路总控编排 | 阶段门强制先分析后实施，代码类任务可在授权后自动编排 AI delivery 留存 |
 | `ai-worklog` | AI 协作日报和报工统计 | 先预览再生成，不输出敏感凭据 |
@@ -78,9 +78,9 @@ m2k-skills/
 
 | 层 | 机制 |
 |---|---|
-| 数据库安全（本地兜底） | 白名单/黑名单检查、字面值遮蔽、多语句拒绝（`sql_guard.py`）；日常查库优先使用数据库 MCP |
+| 数据库安全（MCP 优先 + 本地脚本） | 日常查库建议优先配置数据库 MCP；本地 `sql_guard.py` 提供白名单/黑名单检查、字面值遮蔽、多语句拒绝 |
 | 凭据保护 | `redact()` 脱敏、`passwordEnv` 环境变量引用、不落盘 |
-| 操作控制 | 只读默认、风险操作只生成不执行、commit/push 需确认 |
+| 操作控制 | 只读默认、风险操作只生成不执行、本地 commit/push 需确认；GitHub/GitLab/Gitee 平台对象优先 MCP 且高风险动作需额外授权 |
 | 审计 | 操作和拦截事件自动写入 `*.local.jsonl` |
 | 数据隔离 | `*.local.json`/`*.local.jsonl` 不进 Git |
 

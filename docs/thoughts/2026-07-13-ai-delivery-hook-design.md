@@ -169,7 +169,7 @@ assets/templates/
 
 ```text
 .agents/skills/git-trunk-workflow/
-.agents/skills/postgres-query/             # 历史/低优先级：数据库访问优先 MCP
+.agents/skills/postgres-query/             # 本地受控脚本：数据库访问建议优先 MCP
 .agents/skills/server-docker-logs-readonly/
 .agents/skills/work-orchestrator/
 ```
@@ -1133,12 +1133,13 @@ python <skill-root>/scripts/ai_delivery_finish.py --repo-root <repo-root> --stat
 | Git commit / push | 由 Git hook 被动校验，不替代 Git skill | `check_ai_delivery.py` |
 | Handoff 后 | 提交完成后关闭 session、更新 checkpoint | `ai_delivery_finish.py` |
 
-与 `git-trunk-workflow` 的关系：
+与 `git-trunk-workflow` 和托管平台 MCP 的关系：
 
 - 分支创建、显式暂存、commit、push 仍由 `git-trunk-workflow` 负责。
 - `ai-delivery-hook` 必须在暂存/commit 前完成 prepare，确保文档也被纳入本次显式暂存范围。
 - 如果 `git-trunk-workflow` 因工作区不干净或路径不明确而阻断，`ai-delivery-hook` 不得绕过它。
 - 如果 `ai-delivery-hook` 因缺少留存而阻断，`git-trunk-workflow` 不得改用原生 Git 兜底。
+- GitHub/GitLab/Gitee 的 PR/MR、issue、CI、review 等平台对象优先交给对应 MCP，但平台 MCP 不得替代本地 Git 围栏。
 
 总编排的关键约束：**只要进入 AI 代码实施，就必须显式开启 session；只要准备提交 AI 变更，就必须显式 prepare；不能只依赖模型记忆。**
 
@@ -1782,14 +1783,14 @@ AI 下次接手必须发现人工未记录提交。
 
 这也是首版最重要的边界：**强制 AI 负责 AI 做过的事，同时让 AI 记住人临时做过的事。**
 
-## 同日补充：数据库查询 skill 转为低优先级
+## 同日补充：数据库查询与 Git 平台对象的 MCP 优先
 
-今天重新评估 `postgres-query` 后，判断它不再是高优先级能力：用了数据库 MCP 之后，当前数据库访问问题基本可以由 MCP 平替，甚至更优地处理。MCP 直接作为客户端能力暴露，省去了本地 profile、Python 驱动、连接配置和脚本入口的维护成本。
+今天重新评估 `postgres-query` 后，判断它不是要废弃，而是要改变默认入口：数据库 MCP 能更自然地处理日常查询、结构查看和结果返回；`postgres-query` 继续承担本地受控脚本、围栏审计和无 MCP 场景。
 
 后续策略：
 
-1. 日常数据库查询、结构查看和结果返回优先使用数据库 MCP。
-2. `postgres-query` 暂时放一放，标记为**低优先级**，预计几乎不再主动更新。
-3. 只有没有数据库 MCP，或明确需要本地 `sql_guard.py`、脱敏、审计、行数/超时硬上限时，才使用它兜底。
-4. `work-orchestrator` 的数据库路由也应调整为“MCP 优先，postgres-query 兜底”。
-5. README、manifest、前端静态页和安装文档不应继续把 `postgres-query` 写成默认推荐入口。
+1. 日常数据库查询、结构查看和结果返回优先配置数据库 MCP。
+2. `postgres-query` 仍在使用；当没有 MCP、用户明确要求本地脚本、或需要 `sql_guard.py`、脱敏、审计、行数/超时硬上限时继续使用。
+3. `work-orchestrator` 的数据库路由调整为“MCP 优先，本地受控脚本可用”。
+4. GitHub/GitLab/Gitee 的 issue、PR/MR、review、CI、release 等平台对象优先走对应 MCP。
+5. 本地分支、显式暂存、commit、push 仍由 `git-trunk-workflow` 负责，不能用 MCP 绕过保护分支、禁 force push 和审计围栏。

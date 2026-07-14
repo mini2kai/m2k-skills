@@ -1,6 +1,6 @@
 ---
 name: git-trunk-workflow
-description: Safe Git operations with protected-branch enforcement, explicit staging, Chinese commits, and audit trail. Use when the user asks to create a short-lived branch, stage files, write Chinese commits, push non-protected branches, or produce merge handoff notes. Does not merge long-lived branches, deploy, force push, discard changes, or run destructive Git operations.
+description: Safe local Git operations with protected-branch enforcement, explicit staging, Chinese commits, push of non-protected branches, and audit trail. Use when the user asks to create a short-lived branch, stage files, write Chinese commits, push non-protected branches, or produce merge handoff notes. GitHub/GitLab/Gitee issue/PR/MR/review/CI/release operations should prefer the corresponding MCP; this skill does not merge long-lived branches, deploy, force push, discard changes, or run destructive Git operations.
 ---
 
 # Git Trunk Workflow
@@ -35,6 +35,12 @@ scripts/git_handoff_summary.ps1 -PrimaryTarget <branch> [-BackportTarget <branch
 
 调用方式：`powershell -NoProfile -ExecutionPolicy Bypass -File scripts/<name>.ps1 [参数]`
 
+## 托管平台 MCP 边界
+
+本 skill 只负责本地 Git 状态和本地仓库写操作。GitHub/GitLab/Gitee 上的 issue、PR/MR、review、CI、release、远端仓库元数据等平台对象，优先交给对应 MCP。
+
+本地分支创建、显式暂存、commit、push 仍必须走本 skill；不得用通用 Git MCP 或平台 MCP 绕过保护分支、显式暂存、禁止 force push 和审计围栏。
+
 ## 围栏以内（AI 自由发挥）
 
 在上述围栏保护下，AI 自行决定：
@@ -46,3 +52,4 @@ scripts/git_handoff_summary.ps1 -PrimaryTarget <branch> [-BackportTarget <branch
 - 验证方式和结果总结
 - 交接摘要内容和格式
 - 合并/回灌建议
+- 判断是否需要 GitHub/GitLab/Gitee MCP 处理 PR/MR、issue、review 或 CI 信息

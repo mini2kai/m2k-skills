@@ -185,7 +185,7 @@ C:\Users\you\.codex\skills\ai-worklog\
 
 ### postgres-query
 
-> 维护状态：低优先级；日常数据库访问优先使用数据库 MCP。本节仅作为无 MCP 时的本地脚本兜底示例。
+> 使用定位：`postgres-query` 仍可直接使用；新环境和日常查库建议优先配置数据库 MCP。本节展示本地受控脚本用法，MCP 配置示例见 `skills/postgres-query/references/connection.md`。
 
 ```powershell
 # 查看本地连接配置
@@ -202,6 +202,8 @@ python .\postgres-query\scripts\pg_explain.py --sql "select * from orders where 
 ```
 
 本地连接配置：`postgres-query/scripts/connections.local.json`，密码用 `passwordEnv` 引用环境变量。
+
+数据库 MCP 推荐配置名：`dazzle_dev`。项目级无密模板可放 `<repo>/.zcode/config.json` 的 `mcp.servers` 下；真实 DSN 建议放用户级 `~/.zcode/cli/config.json`，不要提交到 Git。
 
 ### ai-worklog
 
@@ -235,6 +237,8 @@ powershell -ExecutionPolicy Bypass -File .\web-demo-publisher\scripts\generate-f
 
 通过自然语言触发：`从 uat 拉一个 ai 分支处理这个问题`
 
+本 skill 只负责本地 Git 分支、显式暂存、commit、push 和交接摘要。GitHub/GitLab/Gitee 的 issue、PR/MR、review、CI、release 等平台对象建议优先配置对应 MCP；本地 Git 写操作不要用 MCP 绕过本地围栏。
+
 ### ai-delivery-hook
 
 ```powershell
@@ -262,6 +266,6 @@ python .i-delivery-hook\scripts\doctor.py --repo-root .
 | uv | TUI 管理器运行 | 推荐 |
 | PowerShell | 安装器和部分脚本 | Windows 下是 |
 | Node.js / npx | lark-cli-config、web-demo-publisher | 按需 |
-| psycopg / psycopg2 | postgres-query（低优先级，本地兜底；日常查库优先 MCP） | 按需 |
+| psycopg / psycopg2 | postgres-query 本地受控脚本；如使用数据库 MCP 可不装 | 按需 |
 | paramiko | server-docker-logs-readonly | 按需 |
 | openpyxl | ai-worklog Excel 输出 | 按需 |

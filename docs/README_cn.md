@@ -28,22 +28,29 @@ AI Agent 越来越强，但"能做"不等于"应该做"。
 
 | 原则 | 对应实践 |
 |---|---|
-| 默认只读（历史/本地兜底） | [postgres-query](../skills/postgres-query/) — 低优先级；日常查库建议优先使用数据库 MCP，脚本只作为无 MCP 时的只读兜底 |
-| 确认门槛 | [git-trunk-workflow](../skills/git-trunk-workflow/) — commit/push 前必须确认 |
+| 默认只读（MCP 优先 + 本地脚本） | [postgres-query](../skills/postgres-query/) — 仍在使用；日常查库建议优先配置数据库 MCP，本地脚本保留只读围栏和审计 |
+| 确认门槛 | [git-trunk-workflow](../skills/git-trunk-workflow/) — 本地 commit/push 前必须确认；GitHub/GitLab/Gitee 平台对象优先 MCP |
 | AI 交付记忆 | [ai-delivery-hook](../skills/ai-delivery-hook/) — active AI session 下强制 repo-local 留存，人工提交不阻断 |
 | 先理解再动手 | [work-orchestrator](../skills/work-orchestrator/) — 阶段门强制先分析后实施，并把代码任务路由到 AI delivery 留存 |
 | 规则跟着任务走 | [server-docker-logs-readonly](../skills/server-docker-logs-readonly/) — 白名单脚本，不给通用 SSH |
-| 凭据不持久化（历史/本地兜底） | [postgres-query](../skills/postgres-query/) — 临时连接用完即弃，profile 用环境变量存密码；仅在不用 MCP 时参考 |
+| 凭据不持久化 | 数据库 MCP / [postgres-query](../skills/postgres-query/) — MCP DSN 和平台 token 不进仓库；本地 profile 用环境变量存密码 |
 
-备注：`postgres-query` 仍然是围栏模型的早期代表案例，但从 2026-07-13 起不再作为数据库访问的主要方向；后续查库优先交给数据库 MCP。
+备注：`postgres-query` 仍然是围栏模型的早期代表案例，也仍在使用；新的推荐是先配置数据库 MCP，再按需使用本地受控脚本。GitHub/GitLab/Gitee 这类托管平台对象同理优先 MCP，本地 Git 写操作仍保留脚本围栏。
 
 ## 文章
 
 | # | 标题 | 位置 |
 |---|---|---|
-| 01 | [postgres-query：用代码围栏替代提示词祈祷](../skills/postgres-query/DESIGN.md) | 历史案例；低优先级维护 |
+| 01 | [postgres-query：用代码围栏替代提示词祈祷](../skills/postgres-query/DESIGN.md) | 仍在使用；MCP 优先配置 |
 | 02 | (待写) | 信任边界 vs 能力边界：AI Agent 安全的真正问题 |
-| 03 | (待写) | "先分析不修改"如何改变 AI 协作质量 |
+| 03 | [MCP 作用域与 Git 托管平台分层设计](./thoughts/2026-07-14-mcp-scope-and-git-hosting-design.md) | 数据库/Git MCP 与本地围栏取舍 |
+| 04 | (待写) | "先分析不修改"如何改变 AI 协作质量 |
+
+## 探讨
+
+| 分类 | 位置 |
+|---|---|
+| 进行中的问题讨论 | [discussions/README_cn.md](./discussions/README_cn.md) |
 
 ## 关于我
 

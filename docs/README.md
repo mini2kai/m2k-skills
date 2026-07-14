@@ -30,22 +30,29 @@ These principles are not theoretical. The `skills/` directory contains their imp
 
 | Principle | Implementation |
 |---|---|
-| Read-only default (historical/local fallback) | [postgres-query](../skills/postgres-query/) — low priority; prefer database MCP for daily database access, keep scripts as a no-MCP read-only fallback |
-| Confirmation gates | [git-trunk-workflow](../skills/git-trunk-workflow/) — commit/push requires confirmation |
+| Read-only default (MCP first + local scripts) | [postgres-query](../skills/postgres-query/) — still in use; configure database MCP first for daily access, keep local scripts for read-only fences and audit |
+| Confirmation gates | [git-trunk-workflow](../skills/git-trunk-workflow/) — local commit/push requires confirmation; GitHub/GitLab/Gitee platform objects prefer MCP |
 | AI delivery memory | [ai-delivery-hook](../skills/ai-delivery-hook/) — active AI sessions require repo-local delivery records while human commits remain unblocked |
 | Understand before acting | [work-orchestrator](../skills/work-orchestrator/) — phase gates enforce analysis before execution and route code tasks into AI delivery retention |
 | Rules follow the task | [server-docker-logs-readonly](../skills/server-docker-logs-readonly/) — allowlist scripts, no general SSH |
-| Credentials don't persist (historical/local fallback) | [postgres-query](../skills/postgres-query/) — temporary connections discarded after use; reference only when not using MCP |
+| Credentials don't persist | Database MCP / [postgres-query](../skills/postgres-query/) — MCP DSNs and platform tokens stay out of Git; local profiles use env vars for passwords |
 
-Note: `postgres-query` remains an early representative fence-model case, but since 2026-07-13 it is no longer the primary direction for database access; future database work should prefer database MCP.
+Note: `postgres-query` remains an early representative fence-model case and is still in use; the updated recommendation is to configure database MCP first, then use local guarded scripts when needed. GitHub/GitLab/Gitee hosting-platform objects follow the same MCP-first idea, while local Git writes keep script fences.
 
 ## Articles
 
 | # | Title | Location |
 |---|---|---|
-| 01 | [postgres-query: Code fences over prompt prayers](../skills/postgres-query/DESIGN.md) | Historical case; low-priority maintenance |
+| 01 | [postgres-query: Code fences over prompt prayers](../skills/postgres-query/DESIGN.md) | Still used; MCP-first configuration |
 | 02 | (planned) | Trust boundaries vs capability boundaries |
-| 03 | (planned) | How "analyze first, don't modify" changes AI collaboration quality |
+| 03 | [MCP scope and Git hosting platform layering](./thoughts/2026-07-14-mcp-scope-and-git-hosting-design.md) | Database/Git MCP and local fence trade-offs |
+| 04 | (planned) | How "analyze first, don't modify" changes AI collaboration quality |
+
+## Discussions
+
+| Category | Location |
+|---|---|
+| Open questions under discussion | [discussions/README.md](./discussions/README.md) |
 
 ## About
 

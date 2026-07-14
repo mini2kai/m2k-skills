@@ -158,4 +158,4 @@ DESIGN.md 随 skill 更新同步维护。它是你的设计资产，也是对外
 - SKILL.md：40 行，只有围栏规则和入口
 - DESIGN.md：设计理念和实现思路的完整记录
 
-维护状态补充：从 2026-07-13 起，数据库访问优先使用数据库 MCP；`postgres-query` 标记为低优先级，主要保留为无 MCP 时的本地脚本兜底和围栏设计案例。
+使用定位补充：从 2026-07-14 起，数据库访问建议优先配置数据库 MCP；`postgres-query` 仍在使用，主要承担本地受控脚本、围栏审计和设计案例职责。GitHub/GitLab/Gitee 平台对象也采用 MCP 优先，但本地 Git 写操作继续保留 `git-trunk-workflow` 围栏。
