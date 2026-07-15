@@ -139,10 +139,15 @@ def git_relpath(repo_root: Path, path: Path) -> str:
     return rel.as_posix()
 
 
+def normalize_repo_relpath(rel: str) -> str:
+    return rel.strip().replace("\\", "/")
+
+
 def safe_repo_path(repo_root: Path, rel: str) -> Path:
-    if not rel or rel.startswith("/") or re.match(r"^[A-Za-z]:", rel):
+    normalized = normalize_repo_relpath(rel)
+    if not normalized or normalized.startswith("/") or re.match(r"^[A-Za-z]:", normalized):
         raise DeliveryError("invalid_repo_path", f"必须使用仓库内相对路径：{rel}", next_action="修正 current.local.json 的 files 字段")
-    target = (repo_root / rel).resolve()
+    target = (repo_root / normalized).resolve()
     try:
         target.relative_to(repo_root.resolve())
     except ValueError as exc:
@@ -253,9 +258,12 @@ def validate_current(data: dict[str, Any], repo_root: Path) -> list[str]:
     for key in required:
         if key not in data:
             errors.append(f"缺少字段：{key}")
-    task_type = str(data.get("type", ""))
-    risk_level = str(data.get("risk_level", ""))
-    doc_level = str(data.get("doc_level", ""))
+    title = str(data.get("title", "")).strip()
+    task_type = str(data.get("type", "")).strip()
+    risk_level = str(data.get("risk_level", "")).strip()
+    doc_level = str(data.get("doc_level", "")).strip()
+    if not title:
+        errors.append("title 不能为空")
     if task_type not in TASK_TYPES:
         errors.append(f"type 不在枚举内：{task_type}")
     if risk_level not in RISK_LEVELS:
@@ -275,14 +283,23 @@ def validate_current(data: dict[str, Any], repo_root: Path) -> list[str]:
             errors.append("跨仓任务不允许使用 doc_level=skip")
         if risk_level == "high":
             errors.append("high 风险任务不允许使用 doc_level=skip")
-    for item in data.get("files", []) if isinstance(data.get("files"), list) else []:
+    files = data.get("files", []) if isinstance(data.get("files"), list) else []
+    normalized_files: list[str] = []
+    for item in files:
         if not isinstance(item, str):
             errors.append("files 中只能包含字符串路径")
             continue
+        normalized = normalize_repo_relpath(item)
+        if not normalized:
+            errors.append("files 中不能包含空白路径")
+            continue
+        normalized_files.append(normalized)
         try:
-            safe_repo_path(repo_root, item)
+            safe_repo_path(repo_root, normalized)
         except DeliveryError as exc:
             errors.append(exc.message)
+    if len(normalized_files) != len(set(normalized_files)):
+        errors.append("files 中存在重复路径")
     return errors
 
 
@@ -302,6 +319,58 @@ def load_active_session(skill_root: Path) -> dict[str, Any] | None:
     if data.get("actor") == "ai" and data.get("status") == "active":
         return data
     return None
+
+
+def validate_active_session(session: dict[str, Any], repo_root: Path, current: dict[str, Any] | None = None) -> list[str]:
+    errors: list[str] = []
+    if session.get("actor") != "ai":
+        errors.append("session.actor 必须是 ai")
+    if session.get("status") != "active":
+        errors.append("session.status 必须是 active")
+    if not str(session.get("session_id", "")).strip():
+        errors.append("session.session_id 不能为空")
+    if str(session.get("repo_root", "")).strip() != str(repo_root):
+        errors.append("session.repo_root 与当前 --repo-root 不一致")
+    task_title = str(session.get("task_title", "")).strip()
+    task_type = str(session.get("task_type", "")).strip()
+    if not task_title:
+        errors.append("session.task_title 不能为空")
+    if task_type not in TASK_TYPES:
+        errors.append(f"session.task_type 不合法：{task_type}")
+    if current is not None:
+        current_title = str(current.get("title", "")).strip()
+        current_type = str(current.get("type", "")).strip()
+        if current_title != task_title:
+            errors.append("session.task_title 与 current.local.json.title 不一致")
+        if current_type != "manual-backfill" and task_type != current_type:
+            errors.append("session.task_type 与 current.local.json.type 不一致")
+    return errors
+
+
+def normalize_file_list(value: Any) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    normalized: list[str] = []
+    for item in value:
+        if isinstance(item, str):
+            path = normalize_repo_relpath(item)
+            if path:
+                normalized.append(path)
+    return normalized
+
+
+def current_file_set(data: dict[str, Any]) -> set[str]:
+    return set(normalize_file_list(data.get("files")))
+
+
+def is_git_ignored(repo_root: Path, rel: str) -> bool:
+    result = git(["check-ignore", "-q", "--", normalize_repo_relpath(rel)], repo_root)
+    return result["ok"]
+
+
+def current_docs_set(data: dict[str, Any]) -> set[str]:
+    docs = data.get("docs_ignored", [])
+    return set(normalize_file_list(docs))
 
 
 def ensure_active_session(skill_root: Path) -> dict[str, Any]:

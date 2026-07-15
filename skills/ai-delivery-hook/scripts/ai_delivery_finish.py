@@ -17,6 +17,7 @@ from ai_delivery_common import (
     resolve_skill_root,
     safe_repo_path,
     state_path,
+    validate_active_session,
     write_json,
 )
 
@@ -44,6 +45,9 @@ def run() -> None:
     repo_root = resolve_repo_root(args.repo_root)
     skill_root = resolve_skill_root(args.skill_root)
     session = ensure_active_session(skill_root)
+    session_errors = validate_active_session(session, repo_root)
+    if session_errors:
+        raise DeliveryError("invalid_session", "session.local.json 校验失败。", errors=session_errors, next_action="先清理或重启 session，再继续收口")
     head = current_head(repo_root)
     prepared = validate_completed(repo_root, skill_root) if args.status == "completed" else None
     if args.status == "completed" and not head:

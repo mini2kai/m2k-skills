@@ -5,6 +5,7 @@ from datetime import datetime
 
 from ai_delivery_common import (
     DeliveryError,
+    TASK_TYPES,
     add_common_args,
     append_audit,
     checkpoint_for_repo,
@@ -50,6 +51,13 @@ def run() -> None:
 
     repo_root = resolve_repo_root(args.repo_root)
     skill_root = resolve_skill_root(args.skill_root)
+    title = args.title.strip()
+    task_type = args.task_type.strip()
+    if not title:
+        raise DeliveryError("invalid_title", "title 不能为空。", next_action="提供本次任务标题后重试")
+    if task_type not in TASK_TYPES:
+        raise DeliveryError("invalid_task_type", f"type 不在枚举内：{task_type}", next_action="使用允许的任务类型重试")
+
     existing = load_active_session(skill_root)
     if existing and not args.force:
         raise DeliveryError("session_already_active", "已有 active AI session。", next_action="先运行 ai_delivery_finish.py 或使用 --force")
@@ -72,8 +80,8 @@ def run() -> None:
         "repo_root": str(repo_root),
         "started_at": now_iso(),
         "base_commit": head,
-        "task_title": args.title,
-        "task_type": args.task_type,
+        "task_title": title,
+        "task_type": task_type,
     }
     write_json(state_path(skill_root, "session"), session)
     if initialized:

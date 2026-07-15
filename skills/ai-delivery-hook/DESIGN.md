@@ -78,8 +78,11 @@ git log <last_ai_seen_commit>..HEAD
 - changed files
 - delivery/workflow 文档路径
 - session_id
+- repo_root
 
 `check_ai_delivery.py` 不只检查文档存在，还检查 current hash 和 staged files 是否仍然匹配。prepare 后继续改代码会被要求重新 prepare。
+
+prepare 之前还会校验 session 的 `task_title`、`task_type`、`repo_root` 与 current 是否一致，避免沿用旧任务内容。
 
 ### 4. repo-local docs
 

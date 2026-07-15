@@ -18,6 +18,7 @@ from ai_delivery_common import (
     safe_repo_path,
     staged_files,
     state_path,
+    validate_active_session,
 )
 
 
@@ -73,6 +74,9 @@ def run() -> None:
     session = load_active_session(skill_root)
     if not session:
         emit({"ok": True, "stage": "check_ai_delivery", "mode": args.mode, "message": "无 active AI session，放行。", "next_action": "none"})
+    session_errors = validate_active_session(session, repo_root)
+    if session_errors:
+        raise DeliveryError("invalid_session", "session.local.json 校验失败。", errors=session_errors, next_action="先清理或重启 session，再继续 Git 操作")
     prepared, required_docs = validate_prepared(repo_root, skill_root, args.mode)
     append_audit(skill_root, "check", {"repo_root": str(repo_root), "mode": args.mode, "session_id": session.get("session_id"), "required_docs": required_docs})
     emit(

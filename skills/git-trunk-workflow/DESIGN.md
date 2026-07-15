@@ -62,6 +62,16 @@ Only `git push -u origin <current-branch>` is executed. No `--force`, no alterna
 
 Only explicit file paths are accepted. This prevents "git add everything" scenarios where unrelated or sensitive files get committed.
 
+### 3.1 Controlled Ignored Staging
+
+`stage_ignored_paths.ps1` is the only supported fallback for ignored paths that need to be committed. It:
+- accepts only explicit file paths
+- requires each path to be ignored by `.gitignore`
+- stages with `git add -f` internally
+- preserves the same audit/logging style as other Git helpers
+
+This keeps ignored docs handling controlled instead of ad hoc.
+
 ### 4. No Branch Name Enforcement
 
 This skill does not enforce any branch naming convention. The scripts only block creation of branches that share names with protected branches. Naming conventions (e.g. `ai/<source>/<YYYYMMDD>-<type>-<topic>`) are owned and enforced by the orchestration layer (`work-orchestrator`) via documentation.

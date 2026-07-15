@@ -33,8 +33,10 @@
 
 - 执行前查历史留存并开启 active AI session。
 - 当前 repo 未激活 hook 时，先询问用户是否允许增量写入 Git hook；用户同意后由 AI 自动执行激活命令。
-- Git handoff 前由 AI 生成 `current.local.json`，再调用 prepare 生成 repo-local docs。
-- commit/push 阶段不绕过 hook 阻断。
+- 多仓 workspace 下，实施前必须先输出 repo map，并显式锁定 `workspace_root`、`code_repo_root`、`delivery_repo_root`、`git_operation_repo_root`、`current_cwd`、`source_branch`、`ai_branch`；`code_repo_root` 必须等于 `git_operation_repo_root`。
+- Git handoff 前由 AI 生成 `current.local.json`，再调用 prepare 生成 repo-local docs；prepare 前必须校验 session/title/files 是否属于本次任务，发现旧 session 或旧标题要先重启。
+- commit/push 阶段不绕过 hook 阻断；commit 前还要做跨仓 `git status` 审计，确认没有误写到其他仓。
+- 如果 docs/ 被 `.gitignore` 忽略，必须走受控 ignored-docs 暂存流程；不能临时手写 `git add -f`。
 - commit 后调用 finish 关闭 session 并更新 checkpoint。
 
 这样用户不需要记 Python 命令，只需要对首次 hook 激活、commit、push 等有副作用动作做授权。

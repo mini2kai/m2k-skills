@@ -9,16 +9,19 @@ from ai_delivery_common import (
     add_common_args,
     append_audit,
     changed_files,
+    current_file_set,
     current_head,
     docs_paths,
     emit,
     emit_error,
     git_relpath,
     hash_file,
+    is_git_ignored,
     require_current,
     resolve_repo_root,
     resolve_skill_root,
     state_path,
+    validate_active_session,
     write_json,
     ensure_active_session,
     now_iso,
@@ -136,6 +139,9 @@ def run() -> None:
     skill_root = resolve_skill_root(args.skill_root)
     session = ensure_active_session(skill_root)
     current_path, current = require_current(skill_root, repo_root)
+    session_errors = validate_active_session(session, repo_root, current)
+    if session_errors:
+        raise DeliveryError("invalid_session", "session.local.json 与 current.local.json 不一致。", errors=session_errors, next_action="先清理或重启 session，再重新运行 prepare")
     if args.mode == "manual-backfill":
         current["type"] = "manual-backfill"
     doc_level = str(current["doc_level"])
@@ -150,7 +156,15 @@ def run() -> None:
     generated = [git_relpath(repo_root, delivery_doc)]
     if workflow_doc:
         generated.append(git_relpath(repo_root, workflow_doc))
-    changed = sorted(set(changed_files(repo_root)) | set(current.get("files", [])) | set(generated))
+    current_files = current_file_set(current)
+    changed_snapshot = set(changed_files(repo_root))
+    generated_set = set(generated)
+    if current_files and not current_files.issubset(changed_snapshot | generated_set):
+        missing = sorted(current_files - (changed_snapshot | generated_set))
+        if missing:
+            raise DeliveryError("current_files_mismatch", "current.local.json.files 与当前变更不一致。", errors=[f"以下文件未出现在当前变更中：{', '.join(missing)}"], next_action="更新 current.local.json.files 后重新运行 prepare")
+    docs_ignored = [rel for rel in generated if is_git_ignored(repo_root, rel)]
+    changed = sorted(changed_snapshot | current_files | set(generated))
     prepared = {
         "session_id": session.get("session_id"),
         "repo_id": session.get("repo_id"),
@@ -162,9 +176,15 @@ def run() -> None:
         "changed_files": changed,
         "delivery_doc": generated[0],
         "workflow_doc": generated[1] if len(generated) > 1 else None,
+        "docs_ignored": docs_ignored,
     }
     write_json(state_path(skill_root, "prepared"), prepared)
     append_audit(skill_root, "prepare", {"repo_root": str(repo_root), "session_id": session.get("session_id"), "doc_level": doc_level, "delivery_doc": generated[0]})
+    message = "AI 交付留存文档已生成。"
+    next_action = "stage_code_and_generated_docs"
+    if docs_ignored:
+        message = "AI 交付留存文档已生成，但 docs/ 被 .gitignore 忽略，不能通过普通 stage_paths.ps1 暂存。"
+        next_action = "use_controlled_ignored_docs_stage_flow"
     emit(
         {
             "ok": True,
@@ -174,8 +194,9 @@ def run() -> None:
             "workflow_doc": prepared.get("workflow_doc"),
             "prepared_path": str(state_path(skill_root, "prepared")),
             "validated_files": changed,
-            "message": "AI 交付留存文档已生成。",
-            "next_action": "stage_code_and_generated_docs",
+            "docs_ignored": docs_ignored,
+            "message": message,
+            "next_action": next_action,
         }
     )
 
