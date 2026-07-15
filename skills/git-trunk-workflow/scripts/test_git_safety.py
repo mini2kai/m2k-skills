@@ -200,6 +200,24 @@ def test_git_common_uses_strict_safe_capture():
     return failures
 
 
+def test_controlled_ignored_staging_script():
+    failures = []
+    script_path = Path(__file__).resolve().with_name('stage_ignored_paths.ps1')
+    if not script_path.exists():
+        return ["FAIL (missing stage_ignored_paths.ps1)"]
+    content = script_path.read_text(encoding='utf-8')
+    required_snippets = [
+        "check-ignore",
+        "add', '-f'",
+        "stage_ignored",
+        "受控 ignored",
+    ]
+    for snippet in required_snippets:
+        if snippet not in content:
+            failures.append(f"FAIL (stage_ignored_paths script missing snippet): {snippet!r}")
+    return failures
+
+
 def main():
     all_failures = []
     tests = [
@@ -210,6 +228,7 @@ def main():
         ("commit_title_prefix", test_commit_title_prefix),
         ("create_branch_failure_blocks_native_fallback", test_create_branch_failure_blocks_native_fallback),
         ("git_common_uses_strict_safe_capture", test_git_common_uses_strict_safe_capture),
+        ("controlled_ignored_staging_script", test_controlled_ignored_staging_script),
     ]
 
     for name, test_fn in tests:

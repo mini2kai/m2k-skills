@@ -91,9 +91,27 @@ def test_prepare_and_check(repo: Path, skill: Path) -> None:
     assert code == 0 and finish["ok"] is True
 
 
+def test_prepare_rejects_session_mismatch(repo: Path, skill: Path) -> None:
+    (repo / "app.py").write_text("print('hello delivery')\n", encoding="utf-8")
+    code, _ = run_json([sys.executable, script("ai_delivery_start.py"), "--repo-root", str(repo), "--skill-root", str(skill), "--title", "旧标题", "--type", "feature"])
+    assert code == 0
+    write_current(skill, ["app.py"], extra={"title": "新标题"})
+    code, data = run_json([sys.executable, script("ai_delivery_prepare.py"), "--repo-root", str(repo), "--skill-root", str(skill)])
+    assert code != 0 and data["error_type"] == "invalid_session"
+
+
+def test_prepare_rejects_file_mismatch(repo: Path, skill: Path) -> None:
+    (repo / "app.py").write_text("print('hello delivery')\n", encoding="utf-8")
+    code, _ = run_json([sys.executable, script("ai_delivery_start.py"), "--repo-root", str(repo), "--skill-root", str(skill), "--title", "修复邮件推送逻辑", "--type", "feature", "--force"])
+    assert code == 0
+    write_current(skill, ["missing.py"])
+    code, data = run_json([sys.executable, script("ai_delivery_prepare.py"), "--repo-root", str(repo), "--skill-root", str(skill)])
+    assert code != 0 and data["error_type"] == "current_files_mismatch"
+
+
 def test_prepared_hash_stale_blocks(repo: Path, skill: Path) -> None:
     (repo / "stale.py").write_text("print('stale')\n", encoding="utf-8")
-    code, _ = run_json([sys.executable, script("ai_delivery_start.py"), "--repo-root", str(repo), "--skill-root", str(skill), "--title", "测试 stale", "--type", "feature", "--force"])
+    code, _ = run_json([sys.executable, script("ai_delivery_start.py"), "--repo-root", str(repo), "--skill-root", str(skill), "--title", "修复邮件推送逻辑", "--type", "feature", "--force"])
     assert code == 0
     write_current(skill, ["stale.py"])
     code, prepared = run_json([sys.executable, script("ai_delivery_prepare.py"), "--repo-root", str(repo), "--skill-root", str(skill)])
@@ -111,6 +129,24 @@ def test_skip_rules(repo: Path, skill: Path) -> None:
     write_current(skill, ["app.py"], doc_level="skip", task_type="bugfix", extra={"skip_reason": "测试"})
     code, data = run_json([sys.executable, script("ai_delivery_prepare.py"), "--repo-root", str(repo), "--skill-root", str(skill)])
     assert code != 0 and data["error_type"] == "invalid_current"
+
+
+def test_start_rejects_empty_title(repo: Path, skill: Path) -> None:
+    code, data = run_json([sys.executable, script("ai_delivery_start.py"), "--repo-root", str(repo), "--skill-root", str(skill), "--title", "   ", "--type", "feature", "--force"])
+    assert code != 0 and data["error_type"] == "invalid_title"
+
+
+def test_prepare_detects_ignored_docs(repo: Path, skill: Path) -> None:
+    (repo / "docs").mkdir(parents=True, exist_ok=True)
+    (repo / ".gitignore").write_text("docs/\n", encoding="utf-8")
+    (repo / "app.py").write_text("print('ignored docs delivery')\n", encoding="utf-8")
+    code, _ = run_json([sys.executable, script("ai_delivery_start.py"), "--repo-root", str(repo), "--skill-root", str(skill), "--title", "忽略 docs", "--type", "feature", "--force"])
+    assert code == 0
+    write_current(skill, ["app.py"], extra={"title": "忽略 docs"})
+    code, prepared = run_json([sys.executable, script("ai_delivery_prepare.py"), "--repo-root", str(repo), "--skill-root", str(skill)])
+    assert code == 0 and prepared["ok"] is True
+    assert prepared["docs_ignored"]
+    assert prepared["next_action"] == "use_controlled_ignored_docs_stage_flow"
 
 
 def test_activate_and_search(repo: Path, skill: Path) -> None:
@@ -135,8 +171,12 @@ def main() -> None:
         tests = [
             test_no_session_passes,
             test_prepare_and_check,
+            test_prepare_rejects_session_mismatch,
+            test_prepare_rejects_file_mismatch,
             test_prepared_hash_stale_blocks,
             test_skip_rules,
+            test_start_rejects_empty_title,
+            test_prepare_detects_ignored_docs,
             test_activate_and_search,
         ]
         for fn in tests:

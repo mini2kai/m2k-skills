@@ -137,11 +137,13 @@ ai/<source>/<YYYYMMDD>-<type>-<topic>
 
 1. **Intake / Evidence**：优先调用 `ai_delivery_search.py` 检索历史 delivery/workflow 留存，作为影响范围和历史风险证据。
 2. **Execute 前**：调用 `doctor.py` 检查当前仓库是否已接入 managed hook。
-3. **未激活时**：不得静默修改 Git hook；先询问用户是否允许为当前 repo 执行 `activate_project.py --repo-root <repo>`。用户同意后由 AI 自动调用，用户不需要手动输入命令。
-4. **Execute 开始前**：调用 `ai_delivery_start.py` 开启 active AI session。若返回 `requires_manual_backfill=true`，先补录或纳入本次交付上下文。
-5. **Git handoff 前**：AI 自动写 `current.local.json`，再调用 `ai_delivery_prepare.py` 生成 repo-local docs 和 `prepared.local.json`。
-6. **commit / push**：由 hook 被动调用 `check_ai_delivery.py`，不得绕过阻断。
-7. **commit 后、push 前或交付收口时**：调用 `ai_delivery_finish.py --status completed` 关闭 session 并更新 checkpoint。
+3. **多仓 workspace 强制**：如果 workspace 下存在多个 `.git`，实施前必须先输出 repo map，并显式锁定 `workspace_root`、`code_repo_root`、`delivery_repo_root`、`git_operation_repo_root`、`current_cwd`、`source_branch`、`ai_branch`。其中 `code_repo_root` 必须等于 `git_operation_repo_root`，不一致就停住。
+4. **未激活时**：不得静默修改 Git hook；先询问用户是否允许为当前 repo 执行 `activate_project.py --repo-root <repo>`。用户同意后由 AI 自动调用，用户不需要手动输入命令。
+5. **Execute 开始前**：调用 `ai_delivery_start.py` 开启 active AI session。若返回 `requires_manual_backfill=true`，先补录或纳入本次交付上下文。
+6. **Git handoff 前**：AI 自动写 `current.local.json`，再调用 `ai_delivery_prepare.py` 生成 repo-local docs 和 `prepared.local.json`。prepare 前必须校验 `session.title / session.type / session.repo_root` 与 `current.local.json.title / current.local.json.files` 是否属于本次任务；发现旧标题、旧文件或旧摘要时必须先清理或重启 session。
+7. **commit / push**：由 hook 被动调用 `check_ai_delivery.py`，不得绕过阻断；commit 前还要做跨仓 `git status` 审计，确认变更只在目标代码仓和目标 delivery 仓。
+8. **commit 后、push 前或交付收口时**：调用 `ai_delivery_finish.py --status completed` 关闭 session 并更新 checkpoint。
+9. **docs 被 ignore 时**：不能临时手写 `git add -f` 兜底，必须走受控 ignored-docs 暂存流程，或者明确说明文档不入库。
 
 若 `ai-delivery-hook` 不可用，代码类任务仍可继续，但最终 handoff 必须说明“未启用 AI delivery 留存”，并建议安装/启用该 Skill。
 

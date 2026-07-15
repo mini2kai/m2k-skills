@@ -21,10 +21,12 @@ AI 本次交付输入，写在 skill 根目录。
 
 规则：
 
+- `title` 必须是非空字符串。
 - `files` 必须是 repo 内相对路径。
 - JSON 文件最大 256KB。
 - `doc_level=skip` 必须提供 `skip_reason`。
 - `bugfix`、`hotfix`、高风险和跨仓任务禁止 `skip`。
+- `task_title` / `task_type` / `repo_root` 由 `session.local.json` 记录，prepare 前必须与 `current.local.json` 一致。
 
 ## prepared.local.json
 
