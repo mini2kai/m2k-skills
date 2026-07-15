@@ -89,7 +89,7 @@
     },
     "work-orchestrator": {
       "path": "skills/work-orchestrator",
-      "version": "0.2.7",
+      "version": "0.3.0",
       "description": "手动触发的中文全链路总控编排 Skill：先分析不修改，动态检查当前可用 Skill，完成证据收集、影响评估、方案设计、验证计划；负责 AI 临时分支命名约定（ai/<source>/<date>-<type>-<topic>）；用户授权后交接 Git 安全执行、代码实施、AI delivery 留存、数据库 MCP 优先/本地受控脚本可用、GitHub/GitLab/Gitee 平台 MCP 优先、日志验证和交付收口。",
       "tags": [
         "orchestration",
@@ -145,7 +145,7 @@
     },
     "git-trunk-workflow": {
       "path": "skills/git-trunk-workflow",
-      "version": "0.3.2",
+      "version": "0.3.3",
       "description": "安全本地 Git 执行层。保护分支拦截、禁止 force push、显式路径暂存、commit 前缀强制校验（13 类）、ff-only 同步、审计留痕；脚本失败禁止原生命令兜底。GitHub/GitLab/Gitee 的 issue/PR/MR/review/CI/release 等平台对象优先交给对应 MCP。",
       "tags": [
         "git",
