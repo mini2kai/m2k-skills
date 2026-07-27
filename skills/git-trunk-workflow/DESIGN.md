@@ -1,149 +1,189 @@
-# git-trunk-workflow: Protected Branches as Code, Not Trust
+# git-trunk-workflow: Safe Git Execution with Mandatory Worktree Isolation
 
 [中文版](./DESIGN_cn.md)
 
 ## Problem
 
-AI Agents doing Git operations is useful but dangerous. A single `git push --force` or accidental merge to main can destroy work. Prompting "don't force push" is unreliable — as demonstrated in this repository's own incident log.
+AI Agents doing Git operations are useful but dangerous. Traditional risks include `git push --force` and accidental commits to protected branches. Concurrent AI sessions add a deeper Git risk: a normal repository checkout has one shared HEAD, one working tree, and one index. Two sessions creating short-lived branches in the same checkout can switch each other's HEAD, mix files, and stage each other's changes.
 
 ## Design Philosophy
 
-**Protected branches, safe staging, and push restrictions are enforced by script logic. AI cannot bypass them regardless of what it's told to do.**
+**Protected branches, safe staging, push restrictions, and concurrency isolation are enforced by scripts.**
 
-The AI has full freedom to decide *what* to commit and *how* to describe it, but the scripts physically prevent it from pushing to protected branches, force pushing, or staging everything blindly.
+This skill no longer creates AI branches with `git checkout -b` in the primary working tree. It always creates a linked `git worktree`, so each AI task gets its own working tree, HEAD, and index. AI can decide what to commit and how to describe it, but scripts physically prevent writes in the primary checkout, protected-branch pushes, force pushes, and blind bulk staging.
 
 ## Responsibility Layers
 
-This skill is a **safe Git execution layer** only. It enforces technical safety invariants (protected branches, no force push, explicit staging). It does NOT own branch naming conventions or business delivery workflow decisions. Those belong to the orchestration layer (`work-orchestrator`), which decides:
+This skill is a **safe Git execution layer** only. It enforces technical safety invariants:
 
-- Whether a branch is needed
-- Which source branch to use
-- What to name the branch (e.g. `ai/<source>/<date>-<type>-<topic>`)
-- When to push
+- AI short-lived branches must be created as isolated worktrees.
+- Git writes may run only inside managed `.wt/` worktrees.
+- Protected branches cannot be created, staged, committed, pushed, or removed as task worktrees.
+- Push never uses force.
+- Staging requires explicit paths.
+- Git writes and worktree lifecycle events are audited.
 
-### Local Git vs Hosting Platform MCP
+It does not own branch naming conventions or business delivery decisions. Those belong to the orchestration layer (`work-orchestrator`), which decides the source branch, branch name, target repository, push timing, and cleanup timing.
 
-This skill does not try to replace GitHub/GitLab/Gitee MCPs. The responsibility boundary is:
+## Local Git vs Hosting Platform MCP
+
+This skill does not replace GitHub/GitLab/Gitee MCPs.
 
 | Operation type | Recommended entry |
 |---|---|
-| Local branch creation, explicit staging, commit, push | `git-trunk-workflow` |
+| Local isolated worktree branch creation, explicit staging, commit, push, cleanup | `git-trunk-workflow` |
 | Protected branches, no force push, audit trail | `git-trunk-workflow` |
 | GitHub issues / PRs / reviews / actions | GitHub MCP |
 | GitLab issues / MRs / pipelines | GitLab MCP |
 | Gitee issues / pull requests / repository objects | Gitee MCP |
-| Merging PR/MR, deleting branches, publishing releases | MCP may perform it, but requires extra confirmation |
+| Merging PR/MR, deleting remote branches, publishing releases | MCP may perform it, but requires extra confirmation |
 
-Core principle: MCP handles remote hosting-platform objects; this skill handles local Git writes. Even if a generic Git MCP is configured later, it must not bypass this skill's protected-branch, explicit-staging, no-force-push, and audit fences.
+Core principle: MCP handles remote hosting-platform objects; this skill handles local Git writes. A generic Git MCP must not bypass this skill's protected-branch, explicit-staging, worktree-isolation, no-force-push, or audit fences.
 
 ## Implementation
 
-### 1. Protected Branch Registry
+### 1. Mandatory Isolated Worktrees
+
+`create_branch.ps1` creates branches with:
+
+```powershell
+git worktree add <repo>/.wt/<safe-branch-name> -b <BranchName> <baseRef>
+```
+
+It no longer runs `git checkout <source>` or `git checkout -b <branch>` in the shared checkout. The default managed worktree root is:
+
+```text
+<primary-worktree>/.wt/
+```
+
+The branch name is converted into a Windows-safe directory name. The script ensures `.wt/` is ignored through the Git common dir `info/exclude`, so the primary checkout's `git status` is not polluted.
+
+### 2. Explicit RepoPath and ExpectedBranch
+
+Scripts bind operations to explicit paths:
+
+- `create_branch.ps1` accepts `-RepositoryPath <repo>` to locate the concrete Git repository.
+- `stage_paths.ps1`, `stage_ignored_paths.ps1`, `commit_cn.ps1`, `push_branch.ps1`, and `git_handoff_summary.ps1` accept `-RepoPath <worktree>`.
+- Git write scripts accept `-ExpectedBranch <branch>` and refuse to continue if the current branch differs.
+
+This prevents wrong-CWD, wrong-repo, wrong-branch, and concurrent-session mistakes.
+
+### 3. Managed Worktree Guard
+
+`git_common.ps1` provides `Assert-IsManagedIsolatedWorktree`. Git write scripts refuse:
+
+- the primary checkout;
+- external worktrees outside the managed `.wt/` root;
+- non-Git paths;
+- protected branches;
+- branches that do not match `-ExpectedBranch`.
+
+### 4. Protected Branch Registry
 
 `Test-ProtectedBranch` in `git_common.ps1` maintains a hardcoded list:
+
 - Named: main, master, dev, uat, prod, production, staging
 - Prefixed: release/*, hotfix/*
 
-Any script that would modify these branches checks this function first and exits on match.
+Any script that would modify those branches checks this function first and exits on match.
 
-### 2. Push Restriction
+### 5. Push Restriction
 
-`push_branch.ps1` checks before push:
-1. Current branch must NOT be protected (`Assert-NotProtectedBranch`)
+`push_branch.ps1` checks that it runs inside a managed isolated worktree, that the branch is not protected, and that `-ExpectedBranch` matches when provided.
 
-Only `git push -u origin <current-branch>` is executed. No `--force`, no alternative remote refs.
+It only runs:
 
-### 3. Stage Path Validation
+```powershell
+git push -u <remote> <current-branch>
+```
+
+No `--force`, no alternative remote ref. Push failure guidance tells the user to fix network/permission state and rerun the script; it does not provide a native `git push` bypass command.
+
+### 6. Stage Path Validation
 
 `stage_paths.ps1` rejects:
-- `.`, `*`, `:/`, `--all`, `-A`, `-u` (bulk staging)
-- Any path containing wildcards
-- Empty paths
 
-Only explicit file paths are accepted. This prevents "git add everything" scenarios where unrelated or sensitive files get committed.
+- `.`, `*`, `:/`, `--all`, `-A`, `-u`
+- any wildcard path
+- empty paths
 
-### 3.1 Controlled Ignored Staging
+It accepts explicit file paths only and cross-checks every requested path against the target worktree's `git status` output.
 
-`stage_ignored_paths.ps1` is the only supported fallback for ignored paths that need to be committed. It:
-- accepts only explicit file paths
-- requires each path to be ignored by `.gitignore`
-- stages with `git add -f` internally
-- preserves the same audit/logging style as other Git helpers
+### 7. Controlled Ignored Staging
 
-This keeps ignored docs handling controlled instead of ad hoc.
+`stage_ignored_paths.ps1` is the only controlled entry for ignored paths. It accepts explicit paths, requires each path to be ignored by `.gitignore` or local exclude, runs `git add -f` internally, and writes audit logs.
 
-### 4. No Branch Name Enforcement
+### 8. Safe Sync Semantics
 
-This skill does not enforce any branch naming convention. The scripts only block creation of branches that share names with protected branches. Naming conventions (e.g. `ai/<source>/<YYYYMMDD>-<type>-<topic>`) are owned and enforced by the orchestration layer (`work-orchestrator`) via documentation.
+Worktree creation prefers `origin/<SourceBranch>` as the base ref, falling back to local `<SourceBranch>` when the remote ref is absent. If local and remote source refs diverge and local is not an ancestor of remote, the script refuses to merge or rebase automatically. `-SyncSource` only runs `git fetch origin --prune`; it does not checkout or pull in the primary checkout.
 
-### 5. Safe Sync Only
+### 9. Git Output Capture
 
-`create_branch.ps1` only syncs via `git pull --ff-only`. If fast-forward fails (diverged history), the script stops. No automatic merge, no automatic rebase.
+`Invoke-GitCapture` supports `-RepoPath` and runs Git as `git -C <RepoPath> ...`. It temporarily sets `$ErrorActionPreference` to `Continue`, captures stdout/stderr, restores the previous setting, and judges failure only by Git exit code.
 
-### 6. Git Output Capture
+### 10. Git State Guard
 
-`Invoke-GitCapture` temporarily sets `$ErrorActionPreference` to `Continue` while running native Git commands, captures stdout/stderr, and then restores the previous setting. Scripts judge failure only by Git exit code, so `remote:` lines and fetch/push progress on stderr do not become false PowerShell exceptions under StrictMode.
+`Assert-NoGitOperationInProgress` checks MERGE_HEAD, REBASE_HEAD, CHERRY_PICK_HEAD, BISECT_LOG, and rebase directories. If any state is present, scripts refuse to continue until the user resolves it.
 
-### 7. Git State Guard
+### 11. Commit Protection
 
-`Assert-NoGitOperationInProgress` checks for MERGE_HEAD, REBASE_HEAD, CHERRY_PICK_HEAD, and rebase directories. If any exist, all operations are refused until the user resolves the state.
+`commit_cn.ps1` checks managed-worktree isolation, protected branches, expected branch, and commit title prefix before committing. Empty staging area still refuses commit.
 
-### 8. Commit on Protected Branch Rejected
+### 12. Audit Trail and Registry
 
-`commit_cn.ps1` calls `Assert-NotProtectedBranch` before committing. Even if AI somehow stages files on a protected branch, the commit itself is blocked.
+Git writes and handoff summaries are logged to:
 
-### 9. File Existence Validation Before Staging
+```text
+logs/git-ops-YYYY-MM-DD.jsonl
+```
 
-`stage_paths.ps1` cross-checks every requested path against `git status` output. If a path has no changes (typo, wrong path, already committed), staging is refused with an explicit error listing the missing paths.
+with 7-day rotation. Audit records include repo root, worktree path, primary worktree path, branch, commit hash, and affected files.
 
-### 10. Audit Trail
+Worktree lifecycle is also registered under Git common dir:
 
-All git operations (create branch, stage, commit, push, handoff summary) are logged to `logs/git-ops-YYYY-MM-DD.jsonl` with 7-day rotation. Audit records include timestamp, event type, branch, commit hash, and affected files.
+```text
+<git-common-dir>/git-trunk-workflow/worktrees.jsonl
+```
 
-### 11. Source Branch Staleness Detection
+The registry records create/remove events for recovery, inspection, expiry reminders, and safe cleanup.
 
-`git_handoff_summary.ps1` reports how many commits the source branch is ahead of the current branch. If source moved forward during development, the handoff explicitly warns about potential merge conflicts.
+### 13. Safe Cleanup
 
-### 12. Script Failures Block Native Fallbacks
+`remove_worktree.ps1` removes only managed `.wt/` worktrees. It checks that the path exists, is a Git worktree, is under the managed root, is on a non-protected branch, matches `-ExpectedBranch`, and has a clean `git status --short`. Dirty worktrees are refused. No force remove is used by default.
 
-When `create_branch.ps1` fails, it outputs `native_git_fallback_forbidden` and `blocked_next_step`. Existing local branches, existing remote branches, and ff-only failures must stop the operation; the model must not bypass the script with `git checkout -b` or `git switch -c`.
+### 14. Script Failures Block Native Fallbacks
 
-### 13. Push Failure Guidance
-
-When `push_branch.ps1` fails due to proxy/network issues, it outputs a `next_action` with a bypass command (`git -c http.proxy="" push`) instead of just an error message.
+Script failures output `native_git_fallback_forbidden` or clear blocking guidance. Existing branches, remote branches, occupied worktree paths, protected branches, ExpectedBranch mismatches, dirty worktrees, and other guard failures must stop the operation. The model must not bypass scripts with native `git checkout -b`, `git switch -c`, `git worktree add`, `git add`, `git commit`, or `git push`.
 
 ## Backward Compatibility
 
-`create_ai_branch.ps1` and `push_ai_branch.ps1` are kept as thin wrappers that delegate to `create_branch.ps1` and `push_branch.ps1` respectively. Existing callers continue to work.
+`create_ai_branch.ps1` and `push_ai_branch.ps1` remain thin wrappers around `create_branch.ps1` and `push_branch.ps1`.
 
-## What Was Deliberately Removed
+Core semantics changed deliberately:
 
-- **10-step workflow documentation**: model knows Git flow
-- **Commit message templates**: model writes Chinese naturally
-- **Merge/backport strategy guide**: model can assess based on context
-- **Validation checklist format**: model decides what to verify
-- **Branch lifecycle management details**: model can suggest cleanup
-- **GitHub/GitLab/Gitee platform workflow templates**: platform objects belong to the corresponding MCP, not this local Git skill
-- **Platform config** (openai.yaml): obsolete
-- **`ai/*` prefix enforcement on push**: replaced by protected-branch check, which is the actual safety invariant
-- **`ai/*` naming enforcement on create**: moved to orchestration layer as an optional convention
+- `create_branch.ps1` always creates an isolated worktree and never switches the current checkout.
+- `-NoCheckout` remains accepted but is deprecated because worktree mode never switches the primary checkout.
+- Later write operations need `-RepoPath <worktree_path>`, or the current CWD must already be inside a managed `.wt/` worktree.
 
 ## File Structure
 
-```
+```text
 git-trunk-workflow/
-├── SKILL.md                     # Fence rules + script entry (~45 lines)
+├── SKILL.md                     # Fence rules + script entries
 ├── DESIGN.md                    # This file
 ├── DESIGN_cn.md                 # Chinese version
 └── scripts/
-    ├── git_common.ps1           # All fence logic (protected branches, validation)
-    ├── git_preflight.ps1        # Read-only repo state check
-    ├── create_branch.ps1        # Safe branch creation with ff-only sync
+    ├── git_common.ps1           # Git helpers, fences, worktree guard, registry
+    ├── git_preflight.ps1        # Repository and worktree preflight
+    ├── create_branch.ps1        # Create isolated worktree short-lived branch
     ├── create_ai_branch.ps1     # Backward-compat wrapper → create_branch.ps1
-    ├── stage_paths.ps1          # Explicit-path-only staging
-    ├── commit_cn.ps1            # Chinese commit helper
-    ├── push_branch.ps1          # Non-protected branch push, no force
+    ├── list_worktrees.ps1       # List Git worktrees and registry state
+    ├── stage_paths.ps1          # Explicit-path-only staging, worktree only
+    ├── stage_ignored_paths.ps1  # Controlled ignored-path staging, worktree only
+    ├── commit_cn.ps1            # Chinese commit helper, worktree only
+    ├── push_branch.ps1          # Non-protected branch push, no force, worktree only
     ├── push_ai_branch.ps1       # Backward-compat wrapper → push_branch.ps1
-    ├── git_handoff_summary.ps1  # Handoff facts collection
-    └── test_git_safety.py       # Safety tests
+    ├── git_handoff_summary.ps1  # Handoff facts collection, worktree only
+    ├── remove_worktree.ps1      # Safe managed worktree cleanup
+    └── test_git_safety.py       # Safety and worktree integration tests
 ```

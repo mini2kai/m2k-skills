@@ -29,7 +29,7 @@ AI Agent 越来越强，但"能做"不等于"应该做"。
 | 原则 | 对应实践 |
 |---|---|
 | 默认只读（MCP 优先 + 本地脚本） | [postgres-query](../skills/postgres-query/) — 仍在使用；日常查库建议优先配置数据库 MCP，本地脚本保留只读围栏和审计 |
-| 确认门槛 | [git-trunk-workflow](../skills/git-trunk-workflow/) — 本地 commit/push 前必须确认；GitHub/GitLab/Gitee 平台对象优先 MCP |
+| 确认门槛 | [git-trunk-workflow](../skills/git-trunk-workflow/) — 本地 Git 写操作强制隔离 worktree，commit/push 前必须确认；GitHub/GitLab/Gitee 平台对象优先 MCP |
 | AI 交付记忆 | [ai-delivery-hook](../skills/ai-delivery-hook/) — active AI session 下强制 repo-local 留存，人工提交不阻断 |
 | 先理解再动手 | [work-orchestrator](../skills/work-orchestrator/) — 阶段门强制先分析后实施，并把代码任务路由到 AI delivery 留存 |
 | 规则跟着任务走 | [server-docker-logs-readonly](../skills/server-docker-logs-readonly/) — 白名单脚本，不给通用 SSH |

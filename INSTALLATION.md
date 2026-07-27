@@ -237,7 +237,7 @@ powershell -ExecutionPolicy Bypass -File .\web-demo-publisher\scripts\generate-f
 
 通过自然语言触发：`从 uat 拉一个 ai 分支处理这个问题`
 
-本 skill 只负责本地 Git 分支、显式暂存、commit、push 和交接摘要。GitHub/GitLab/Gitee 的 issue、PR/MR、review、CI、release 等平台对象建议优先配置对应 MCP；本地 Git 写操作不要用 MCP 绕过本地围栏。
+本 skill 只负责本地 Git 隔离 worktree 分支、显式暂存、commit、push、受控清理和交接摘要。GitHub/GitLab/Gitee 的 issue、PR/MR、review、CI、release 等平台对象建议优先配置对应 MCP；本地 Git 写操作不要用 MCP 绕过本地围栏。
 
 ### ai-delivery-hook
 
