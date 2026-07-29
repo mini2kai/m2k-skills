@@ -80,7 +80,7 @@ description: 仅当用户明确要求使用 work-orchestrator、启用总控编�
 
 | 操作 | 可用受控入口 | 禁止直接使用 |
 |---|---|---|
-| Git 分支创建、暂存、commit、push | `git-trunk-workflow` | `git switch -c`、`git checkout -b`、`git add`、`git commit`、`git push`（分支命名由本 Skill 按 AI 临时分支命名约定决定，传入 create_branch.ps1 执行）|
+| Git 隔离 worktree 分支创建、暂存、commit、push、清理 | `git-trunk-workflow` | `git switch -c`、`git checkout -b`、`git worktree add`、`git add`、`git commit`、`git push`、`git worktree remove`（分支命名由本 Skill 按 AI 临时分支命名约定决定，传入 create_branch.ps1 执行；后续必须绑定返回的 worktree_path）|
 | GitHub/GitLab/Gitee 平台对象 | 对应平台 MCP（优先） | 未授权创建/合并 PR/MR、直接猜测 API、把平台 MCP 当成本地 Git 围栏兜底 |
 | AI 代码交付留存 | `ai-delivery-hook` | AI 自己口头记录、只在最终回复里说明、跳过 current/prepared/docs |
 | 数据库只读查询 | 数据库 MCP（优先）或本地受控脚本 `postgres-query` | 直接 `psql`、手写连接代码、数据库写入/DDL |
@@ -131,13 +131,24 @@ ai/<source>/<YYYYMMDD>-<type>-<topic>
 
 此约定由本 Skill 在编排时决定并通过文档约束；`git-trunk-workflow` 只负责安全执行，不强制命名格式。
 
+## Git worktree 隔离编排
+
+当需要 Git 分支且 `git-trunk-workflow` 可用时，本 Skill 必须按隔离 worktree 方式编排：
+
+1. 调用 `create_branch.ps1 -RepositoryPath <repo> -SourceBranch <source> -BranchName <ai_branch>` 创建分支。
+2. 从返回 JSON 中保存 `worktree_path`，并把它作为本次任务的 `git_worktree_path`。
+3. 后续代码修改、显式暂存、commit、push 和 handoff 都必须在 `git_worktree_path` 内执行，或向脚本传入 `-RepoPath <git_worktree_path> -ExpectedBranch <ai_branch>`。
+4. 主工作区只用于来源分支状态观察，不作为 AI 写操作位置；脚本拒绝主工作区 Git 写操作时不得改用原生命令兜底。
+5. 多仓任务必须为每个真实 Git 子仓库分别创建并记录自己的 `git_worktree_path`。
+6. 合并完成并确认 worktree 干净后，才可交给 `remove_worktree.ps1` 清理。
+
 ## AI delivery 留存编排
 
 当当前可见 Skill 中存在 `ai-delivery-hook`，且任务进入代码/配置/测试文件修改或 Git 交付路径时，本 Skill 必须把它纳入编排：
 
 1. **Intake / Evidence**：优先调用 `ai_delivery_search.py` 检索历史 delivery/workflow 留存，作为影响范围和历史风险证据。
 2. **Execute 前**：调用 `doctor.py` 检查当前仓库是否已接入 managed hook。
-3. **多仓 workspace 强制**：如果 workspace 下存在多个 `.git`，实施前必须先输出 repo map，并显式锁定 `workspace_root`、`code_repo_root`、`delivery_repo_root`、`git_operation_repo_root`、`current_cwd`、`source_branch`、`ai_branch`。其中 `code_repo_root` 必须等于 `git_operation_repo_root`，不一致就停住。
+3. **多仓 workspace 强制**：如果 workspace 下存在多个 `.git`，实施前必须先输出 repo map，并显式锁定 `workspace_root`、`code_repo_root`、`delivery_repo_root`、`git_operation_repo_root`、`current_cwd`、`source_branch`、`ai_branch`。其中 `code_repo_root` 必须等于 `git_operation_repo_root`，不一致就停住；创建分支后还必须记录 `git_worktree_path`，后续代码修改、暂存、commit、push、handoff 都必须绑定该 worktree。
 4. **未激活时**：不得静默修改 Git hook；先询问用户是否允许为当前 repo 执行 `activate_project.py --repo-root <repo>`。用户同意后由 AI 自动调用，用户不需要手动输入命令。
 5. **Execute 开始前**：调用 `ai_delivery_start.py` 开启 active AI session。若返回 `requires_manual_backfill=true`，先补录或纳入本次交付上下文。
 6. **Git handoff 前**：AI 自动写 `current.local.json`，再调用 `ai_delivery_prepare.py` 生成 repo-local docs 和 `prepared.local.json`。prepare 前必须校验 `session.title / session.type / session.repo_root` 与 `current.local.json.title / current.local.json.files` 是否属于本次任务；发现旧标题、旧文件或旧摘要时必须先清理或重启 session。
@@ -179,7 +190,7 @@ ai/<source>/<YYYYMMDD>-<type>-<topic>
 
 用户明确回复“按方案处理 / 授权修改 / 继续实现”后才进入实施。
 
-若需要修改代码或仓库状态，先判断是否需要 Git 分支并确认来源分支；再交接当前可用的 Git 交付能力或临时 Git 方案。若 `ai-delivery-hook` 可用，同时检查 hook 激活状态，未激活时先请求用户授权激活；激活或确认已激活后，进入代码实施前自动开启 AI delivery session。
+若需要修改代码或仓库状态，先判断是否需要 Git 分支并确认来源分支；再交接当前可用的 Git 交付能力创建隔离 worktree，并记录 `git_worktree_path`。后续实施必须在该 worktree 内进行。若 `ai-delivery-hook` 可用，同时检查 hook 激活状态，未激活时先请求用户授权激活；激活或确认已激活后，进入代码实施前自动开启 AI delivery session。
 
 ### E. Verify 验证
 
@@ -187,7 +198,7 @@ ai/<source>/<YYYYMMDD>-<type>-<topic>
 
 ### F. Handoff 交付
 
-代码类任务完成后，需要输出合并前交接摘要。若 `ai-delivery-hook` 可用，Git handoff 前必须先生成 `current.local.json` 并调用 `ai_delivery_prepare.py`，把生成的 delivery/workflow 文档纳入显式暂存清单；commit 完成后调用 `ai_delivery_finish.py` 收口。若当前有可用 Git 交付 Skill，优先交给它完成变更归属检查、显式暂存、中文详细 commit、可选 push 临时分支和 handoff。否则按普通 Git 方案逐步确认。
+代码类任务完成后，需要输出合并前交接摘要。若 `ai-delivery-hook` 可用，Git handoff 前必须先生成 `current.local.json` 并调用 `ai_delivery_prepare.py`，把生成的 delivery/workflow 文档纳入显式暂存清单；commit 完成后调用 `ai_delivery_finish.py` 收口。若当前有可用 Git 交付 Skill，优先交给它在 `git_worktree_path` 中完成变更归属检查、显式暂存、中文详细 commit、可选 push 临时分支、handoff 和后续受控 worktree 清理建议。否则按普通 Git 方案逐步确认。
 
 正式技术/业务文档只在用户明确要求时输出。
 

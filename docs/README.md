@@ -31,7 +31,7 @@ These principles are not theoretical. The `skills/` directory contains their imp
 | Principle | Implementation |
 |---|---|
 | Read-only default (MCP first + local scripts) | [postgres-query](../skills/postgres-query/) — still in use; configure database MCP first for daily access, keep local scripts for read-only fences and audit |
-| Confirmation gates | [git-trunk-workflow](../skills/git-trunk-workflow/) — local commit/push requires confirmation; GitHub/GitLab/Gitee platform objects prefer MCP |
+| Confirmation gates | [git-trunk-workflow](../skills/git-trunk-workflow/) — local Git writes require isolated worktrees and commit/push confirmation; GitHub/GitLab/Gitee platform objects prefer MCP |
 | AI delivery memory | [ai-delivery-hook](../skills/ai-delivery-hook/) — active AI sessions require repo-local delivery records while human commits remain unblocked |
 | Understand before acting | [work-orchestrator](../skills/work-orchestrator/) — phase gates enforce analysis before execution and route code tasks into AI delivery retention |
 | Rules follow the task | [server-docker-logs-readonly](../skills/server-docker-logs-readonly/) — allowlist scripts, no general SSH |

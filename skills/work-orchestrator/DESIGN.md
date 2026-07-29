@@ -33,7 +33,7 @@
 
 - 执行前查历史留存并开启 active AI session。
 - 当前 repo 未激活 hook 时，先询问用户是否允许增量写入 Git hook；用户同意后由 AI 自动执行激活命令。
-- 多仓 workspace 下，实施前必须先输出 repo map，并显式锁定 `workspace_root`、`code_repo_root`、`delivery_repo_root`、`git_operation_repo_root`、`current_cwd`、`source_branch`、`ai_branch`；`code_repo_root` 必须等于 `git_operation_repo_root`。
+- 多仓 workspace 下，实施前必须先输出 repo map，并显式锁定 `workspace_root`、`code_repo_root`、`delivery_repo_root`、`git_operation_repo_root`、`current_cwd`、`source_branch`、`ai_branch`；`code_repo_root` 必须等于 `git_operation_repo_root`。创建 Git 分支后，还必须记录 `git_worktree_path`，后续代码修改、暂存、commit、push 和 handoff 都绑定该隔离 worktree。
 - Git handoff 前由 AI 生成 `current.local.json`，再调用 prepare 生成 repo-local docs；prepare 前必须校验 session/title/files 是否属于本次任务，发现旧 session 或旧标题要先重启。
 - commit/push 阶段不绕过 hook 阻断；commit 前还要做跨仓 `git status` 审计，确认没有误写到其他仓。
 - 如果 docs/ 被 `.gitignore` 忽略，必须走受控 ignored-docs 暂存流程；不能临时手写 `git add -f`。
@@ -43,7 +43,7 @@
 
 ## 与专业 Skill 的关系
 
-- Git 分支、暂存、commit、push：交给 `git-trunk-workflow`。
+- Git 隔离 worktree 分支创建、暂存、commit、push、清理：交给 `git-trunk-workflow`；后续写操作必须绑定其返回的 `worktree_path`。
 - GitHub/GitLab/Gitee issue、PR/MR、review、CI、release 等平台对象：优先交给对应 MCP。
 - AI 代码交付留存：交给 `ai-delivery-hook`。
 - 数据库日常只读验证：优先用数据库 MCP；本地 `postgres-query` 仍作为受控脚本方案可用。
