@@ -242,14 +242,14 @@ powershell -ExecutionPolicy Bypass -File .\web-demo-publisher\scripts\generate-f
 ### ai-delivery-hook
 
 ```powershell
-# 激活当前 Git 仓库的 AI delivery hook
-python .i-delivery-hook\scriptsctivate_project.py --repo-root .
+# 只读检索历史交付、设计留存
+python skills/ai-delivery-hook/scripts/ai_delivery_search.py --repo-root . --query "登录 超时"
 
-# 只读体检 hook 激活和本地状态
-python .i-delivery-hook\scripts\doctor.py --repo-root .
+# 列出指定基线之后的提交，判断人工变更
+python skills/ai-delivery-hook/scripts/ai_delivery_since.py --repo-root . --since origin/main
 ```
 
-通过总编排使用时，在 AI 修改代码前 start，交付前 prepare，commit 后 finish；无 active session 时不会阻断人工提交。
+本 skill 纯只读：不安装 Git hook、不阻断提交、不维护 session 状态。交付文档按需生成，日常改动由 `git-trunk-workflow` 的中文详细 commit 承担留痕。
 
 ### work-orchestrator
 

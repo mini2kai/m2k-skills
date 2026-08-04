@@ -32,7 +32,7 @@ These principles are not theoretical. The `skills/` directory contains their imp
 |---|---|
 | Read-only default (MCP first + local scripts) | [postgres-query](../skills/postgres-query/) — still in use; configure database MCP first for daily access, keep local scripts for read-only fences and audit |
 | Confirmation gates | [git-trunk-workflow](../skills/git-trunk-workflow/) — local Git writes require isolated worktrees and commit/push confirmation; GitHub/GitLab/Gitee platform objects prefer MCP |
-| AI delivery memory | [ai-delivery-hook](../skills/ai-delivery-hook/) — active AI sessions require repo-local delivery records while human commits remain unblocked |
+| AI delivery memory | [ai-delivery-hook](../skills/ai-delivery-hook/) — read-only search over past delivery docs and commits since a baseline; narrowed from hook enforcement to context supply |
 | Understand before acting | [work-orchestrator](../skills/work-orchestrator/) — phase gates enforce analysis before execution and route code tasks into AI delivery retention |
 | Rules follow the task | [server-docker-logs-readonly](../skills/server-docker-logs-readonly/) — allowlist scripts, no general SSH |
 | Credentials don't persist | Database MCP / [postgres-query](../skills/postgres-query/) — MCP DSNs and platform tokens stay out of Git; local profiles use env vars for passwords |
@@ -47,7 +47,8 @@ Note: `postgres-query` remains an early representative fence-model case and is s
 | 02 | (planned) | Trust boundaries vs capability boundaries |
 | 03 | [MCP scope and Git hosting platform layering](./thoughts/2026-07-14-mcp-scope-and-git-hosting-design.md) | Database/Git MCP and local fence trade-offs |
 | 04 | [Meta-prompt dynamic Skill vs static fences](./thoughts/2026-08-04-meta-prompt-dynamic-skill-design.md) | Hybrid architecture for dynamic capability discovery and code fences |
-| 05 | (planned) | How "analyze first, don't modify" changes AI collaboration quality |
+| 05 | [Descoping ai-delivery-hook from enforcement to read-only](./thoughts/2026-08-04-ai-delivery-hook-descope.md) | Never-activated fences, global state under concurrency, what fences should guard |
+| 06 | (planned) | How "analyze first, don't modify" changes AI collaboration quality |
 
 ## Discussions
 

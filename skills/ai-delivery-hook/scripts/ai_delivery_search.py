@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import argparse
-from pathlib import Path
 
-from ai_delivery_common import DeliveryError, add_common_args, emit, emit_error, read_doc_summary, resolve_repo_root, resolve_skill_root
+from ai_delivery_common import add_common_args, cli_guard, emit, read_doc_summary, resolve_repo_root
+
+SEARCH_DIRS = (("docs", "delivery"), ("docs", "ai-workflow"), ("docs", "thoughts"))
 
 
 def score_text(text: str, terms: list[str]) -> int:
@@ -12,18 +13,17 @@ def score_text(text: str, terms: list[str]) -> int:
 
 
 def run() -> None:
-    parser = argparse.ArgumentParser(description="只读检索 repo-local AI delivery 历史文档。")
+    parser = argparse.ArgumentParser(description="只读检索 repo-local 交付与设计留存文档。")
     add_common_args(parser)
     parser.add_argument("--query", required=True)
     parser.add_argument("--limit", type=int, default=10)
     args = parser.parse_args()
 
     repo_root = resolve_repo_root(args.repo_root)
-    resolve_skill_root(args.skill_root)
     terms = [item for item in args.query.replace("/", " ").replace("-", " ").split() if item]
-    roots = [repo_root / "docs" / "delivery", repo_root / "docs" / "ai-workflow"]
     matches: list[dict[str, object]] = []
-    for root in roots:
+    for parts in SEARCH_DIRS:
+        root = repo_root.joinpath(*parts)
         if not root.exists():
             continue
         for path in root.rglob("*.md"):
@@ -48,7 +48,4 @@ def run() -> None:
 
 
 if __name__ == "__main__":
-    try:
-        run()
-    except DeliveryError as exc:
-        emit_error("ai_delivery_search", exc)
+    cli_guard("ai_delivery_search", run)

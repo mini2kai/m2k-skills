@@ -30,7 +30,7 @@ AI Agent 越来越强，但"能做"不等于"应该做"。
 |---|---|
 | 默认只读（MCP 优先 + 本地脚本） | [postgres-query](../skills/postgres-query/) — 仍在使用；日常查库建议优先配置数据库 MCP，本地脚本保留只读围栏和审计 |
 | 确认门槛 | [git-trunk-workflow](../skills/git-trunk-workflow/) — 本地 Git 写操作强制隔离 worktree，commit/push 前必须确认；GitHub/GitLab/Gitee 平台对象优先 MCP |
-| AI 交付记忆 | [ai-delivery-hook](../skills/ai-delivery-hook/) — active AI session 下强制 repo-local 留存，人工提交不阻断 |
+| AI 交付记忆 | [ai-delivery-hook](../skills/ai-delivery-hook/) — 只读检索历史留存和接手前的人工提交；从 hook 强制收缩为上下文能力 |
 | 先理解再动手 | [work-orchestrator](../skills/work-orchestrator/) — 阶段门强制先分析后实施，并把代码任务路由到 AI delivery 留存 |
 | 规则跟着任务走 | [server-docker-logs-readonly](../skills/server-docker-logs-readonly/) — 白名单脚本，不给通用 SSH |
 | 凭据不持久化 | 数据库 MCP / [postgres-query](../skills/postgres-query/) — MCP DSN 和平台 token 不进仓库；本地 profile 用环境变量存密码 |
@@ -45,7 +45,8 @@ AI Agent 越来越强，但"能做"不等于"应该做"。
 | 02 | (待写) | 信任边界 vs 能力边界：AI Agent 安全的真正问题 |
 | 03 | [MCP 作用域与 Git 托管平台分层设计](./thoughts/2026-07-14-mcp-scope-and-git-hosting-design.md) | 数据库/Git MCP 与本地围栏取舍 |
 | 04 | [元 Prompt 动态 Skill 与静态围栏的取舍](./thoughts/2026-08-04-meta-prompt-dynamic-skill-design.md) | 动态能力发现与代码围栏的混合架构 |
-| 05 | (待写) | "先分析不修改"如何改变 AI 协作质量 |
+| 05 | [ai-delivery-hook 从强制围栏收缩为只读能力](./thoughts/2026-08-04-ai-delivery-hook-descope.md) | 未被激活的围栏、并发下的全局状态、围栏该守什么 |
+| 06 | (待写) | "先分析不修改"如何改变 AI 协作质量 |
 
 ## 探讨
 
