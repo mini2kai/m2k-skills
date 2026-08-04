@@ -44,7 +44,8 @@ AI Agent 越来越强，但"能做"不等于"应该做"。
 | 01 | [postgres-query：用代码围栏替代提示词祈祷](../skills/postgres-query/DESIGN.md) | 仍在使用；MCP 优先配置 |
 | 02 | (待写) | 信任边界 vs 能力边界：AI Agent 安全的真正问题 |
 | 03 | [MCP 作用域与 Git 托管平台分层设计](./thoughts/2026-07-14-mcp-scope-and-git-hosting-design.md) | 数据库/Git MCP 与本地围栏取舍 |
-| 04 | (待写) | "先分析不修改"如何改变 AI 协作质量 |
+| 04 | [元 Prompt 动态 Skill 与静态围栏的取舍](./thoughts/2026-08-04-meta-prompt-dynamic-skill-design.md) | 动态能力发现与代码围栏的混合架构 |
+| 05 | (待写) | "先分析不修改"如何改变 AI 协作质量 |
 
 ## 探讨
 

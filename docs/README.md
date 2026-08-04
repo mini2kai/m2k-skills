@@ -46,7 +46,8 @@ Note: `postgres-query` remains an early representative fence-model case and is s
 | 01 | [postgres-query: Code fences over prompt prayers](../skills/postgres-query/DESIGN.md) | Still used; MCP-first configuration |
 | 02 | (planned) | Trust boundaries vs capability boundaries |
 | 03 | [MCP scope and Git hosting platform layering](./thoughts/2026-07-14-mcp-scope-and-git-hosting-design.md) | Database/Git MCP and local fence trade-offs |
-| 04 | (planned) | How "analyze first, don't modify" changes AI collaboration quality |
+| 04 | [Meta-prompt dynamic Skill vs static fences](./thoughts/2026-08-04-meta-prompt-dynamic-skill-design.md) | Hybrid architecture for dynamic capability discovery and code fences |
+| 05 | (planned) | How "analyze first, don't modify" changes AI collaboration quality |
 
 ## Discussions
 
