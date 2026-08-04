@@ -126,15 +126,19 @@ metadata:
 
 高风险覆盖更新必须展示：目标 title/token/URL、操作类型、影响范围、可恢复性、执行后验证方式、确认短语 `确认覆盖该 Feishu 文档`。
 
-## 不支持功能时的处理规则
+## 不支持功能时的动态发现规则
 
 当使用者需要的 Feishu 功能当前脚本或 skill 不支持时：
 
 1. 不要直接拒绝，也不要编造能力。
-2. 先检索可行处理方式：优先查 `lark-cli <command> --help`、`lark-cli schema ...`、本 skill references、已安装 lark-cli 能力；必要时查询官方文档或公开实现。
-3. 先用只读命令或 `--dry-run` 验证方案可行性。
-4. 引导使用者完成当前任务；高风险操作仍按安全确认流程执行。
-5. 任务完成后，把可复用经验沉淀回本 skill：更新脚本、references 或 `SKILL.md` 导航，并运行 `quick_validate.py`。
+2. 先做只读能力发现：优先查 `lark-cli <command> --help`、`lark-cli schema ...`、当前 CLI 版本、已安装命令列表、本 skill references；必要时读取官方 OpenAPI/Markdown 文档或公开实现。
+3. 如果接口文档可通过 URL 或本地服务获取，执行前先读取最新文档，按当前文档生成一次性执行方案；不要沿用过期参数猜测。
+4. 新能力先用只读命令、`--dry-run`、`preflight` 或最小无副作用请求验证可行性。
+5. 高风险写入、覆盖、删除、移动、权限变更不能靠动态发现直接执行，必须回到 wrapper/preflight/确认流程；wrapper 不支持时只输出方案或请求补封装。
+6. 引导使用者完成当前任务；明确区分“已由 wrapper 稳定支持”和“本轮动态发现后临时可用”。
+7. 任务完成后，把可复用经验沉淀回本 skill：更新脚本、references 或 `SKILL.md` 导航，并运行 `quick_validate.py`。
+
+动态发现只用于适配 Feishu/Lark 的易变接口；授权展示、scope、安全确认、凭据保护和写入验证仍是固定围栏，不得放宽。
 
 ## 安全底线
 

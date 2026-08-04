@@ -4,8 +4,8 @@
   "skills": {
     "lark-cli-config": {
       "path": "skills/lark-cli-config",
-      "version": "0.1.2",
-      "description": "分步引导 lark-cli 授权配置，授权 URL 必须显式展示或打开；封装 Feishu document/wiki/sheet 安全操作，sheet/doc 只读默认快速读取并本地清洗。",
+      "version": "0.1.3",
+      "description": "分步引导 lark-cli 授权配置，授权 URL 必须显式展示或打开；封装 Feishu document/wiki/sheet 安全操作，sheet/doc 只读默认快速读取并本地清洗；未封装能力先动态发现 CLI/schema/docs。",
       "tags": [
         "feishu",
         "lark-cli",
@@ -49,8 +49,8 @@
     },
     "skill-dev": {
       "path": "skills/skill-dev",
-      "version": "0.3.3",
-      "description": "围栏模型 Skill 开发规范：识别围栏与自由区、独立安全模块、测试、DESIGN.md、版本管理、事故案例沉淀和 GitHub/PyPI 发布流程。",
+      "version": "0.3.4",
+      "description": "围栏模型 Skill 开发规范：识别围栏与自由区、动态能力发现、独立安全模块、测试、DESIGN.md、版本管理、事故案例沉淀和 GitHub/PyPI 发布流程。",
       "tags": [
         "codex",
         "skill",
