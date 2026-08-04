@@ -1,6 +1,6 @@
 ---
 name: work-orchestrator
-description: 仅当用户明确要求使用 work-orchestrator、启用总控编排、编排分析、先分析不修改、先定位再出方案、先给方案不要改代码、先评估影响范围、先出验证方案，或要求把需求、bug、UAT/线上报错从取证、方案、授权实施、验证到交付收口动态串起来时使用。用于中文工作流中的问题定位、需求分析、证据收集、影响范围评估、方案设计、验证计划，以及在用户授权后按当前本地可用 Skill 动态交接 Git 临时分支、代码实施、AI delivery 留存、数据库只读验证、日志验证和交付摘要；代码类任务若存在 ai-delivery-hook，应主动检测/请求授权激活，并自动编排 start/prepare/finish。本 Skill 默认不直接修改代码、配置、数据库或仓库状态，不合并长期分支，不部署。
+description: 仅当用户明确要求使用 work-orchestrator、启用总控编排、编排分析、先分析不修改、先定位再出方案、先给方案不要改代码、先评估影响范围、先出验证方案，或要求把需求、bug、UAT/线上报错从取证、方案、授权实施、验证到交付收口动态串起来时使用。用于中文工作流中的问题定位、需求分析、证据收集、影响范围评估、方案设计、验证计划，以及在用户授权后按当前本地可用 Skill 动态交接 Git 临时分支、代码实施、交付历史检索、数据库只读验证、日志验证和交付摘要；代码类任务若存在 ai-delivery-hook，可用它只读检索历史留存和接手前的人工提交。本 Skill 默认不直接修改代码、配置、数据库或仓库状态，不合并长期分支，不部署。
 ---
 
 # Work Orchestrator
@@ -82,7 +82,7 @@ description: 仅当用户明确要求使用 work-orchestrator、启用总控编�
 |---|---|---|
 | Git 隔离 worktree 分支创建、暂存、commit、push、清理 | `git-trunk-workflow` | `git switch -c`、`git checkout -b`、`git worktree add`、`git add`、`git commit`、`git push`、`git worktree remove`（分支命名由本 Skill 按 AI 临时分支命名约定决定，传入 create_branch.ps1 执行；后续必须绑定返回的 worktree_path）|
 | GitHub/GitLab/Gitee 平台对象 | 对应平台 MCP（优先） | 未授权创建/合并 PR/MR、直接猜测 API、把平台 MCP 当成本地 Git 围栏兜底 |
-| AI 代码交付留存 | `ai-delivery-hook` | AI 自己口头记录、只在最终回复里说明、跳过 current/prepared/docs |
+| AI 交付历史检索、人工变更检测 | `ai-delivery-hook`（只读） | 凭印象猜测历史改动、跳过接手前的提交检查 |
 | 数据库只读查询 | 数据库 MCP（优先）或本地受控脚本 `postgres-query` | 直接 `psql`、手写连接代码、数据库写入/DDL |
 | 服务器日志读取 | `server-docker-logs-readonly` | `ssh`、`docker exec`、`scp` |
 
@@ -144,19 +144,16 @@ ai/<source>/<YYYYMMDD>-<type>-<topic>
 
 ## AI delivery 留存编排
 
-当当前可见 Skill 中存在 `ai-delivery-hook`，且任务进入代码/配置/测试文件修改或 Git 交付路径时，本 Skill 必须把它纳入编排：
+当当前可见 Skill 中存在 `ai-delivery-hook` 时，它提供两个只读能力，可按需纳入编排：
 
-1. **Intake / Evidence**：优先调用 `ai_delivery_search.py` 检索历史 delivery/workflow 留存，作为影响范围和历史风险证据。
-2. **Execute 前**：调用 `doctor.py` 检查当前仓库是否已接入 managed hook。
-3. **多仓 workspace 强制**：如果 workspace 下存在多个 `.git`，实施前必须先输出 repo map，并显式锁定 `workspace_root`、`code_repo_root`、`delivery_repo_root`、`git_operation_repo_root`、`current_cwd`、`source_branch`、`ai_branch`。其中 `code_repo_root` 必须等于 `git_operation_repo_root`，不一致就停住；创建分支后还必须记录 `git_worktree_path`，后续代码修改、暂存、commit、push、handoff 都必须绑定该 worktree。
-4. **未激活时**：不得静默修改 Git hook；先询问用户是否允许为当前 repo 执行 `activate_project.py --repo-root <repo>`。用户同意后由 AI 自动调用，用户不需要手动输入命令。
-5. **Execute 开始前**：调用 `ai_delivery_start.py` 开启 active AI session。若返回 `requires_manual_backfill=true`，先补录或纳入本次交付上下文。
-6. **Git handoff 前**：AI 自动写 `current.local.json`，再调用 `ai_delivery_prepare.py` 生成 repo-local docs 和 `prepared.local.json`。prepare 前必须校验 `session.title / session.type / session.repo_root` 与 `current.local.json.title / current.local.json.files` 是否属于本次任务；发现旧标题、旧文件或旧摘要时必须先清理或重启 session。
-7. **commit / push**：由 hook 被动调用 `check_ai_delivery.py`，不得绕过阻断；commit 前还要做跨仓 `git status` 审计，确认变更只在目标代码仓和目标 delivery 仓。
-8. **commit 后、push 前或交付收口时**：调用 `ai_delivery_finish.py --status completed` 关闭 session 并更新 checkpoint。
-9. **docs 被 ignore 时**：不能临时手写 `git add -f` 兜底，必须走受控 ignored-docs 暂存流程，或者明确说明文档不入库。
+1. **Intake / Evidence**：调用 `ai_delivery_search.py` 检索 `docs/delivery/`、`docs/ai-workflow/`、`docs/thoughts/` 历史留存，作为影响范围和历史风险证据。
+2. **接手时**：调用 `ai_delivery_since.py --since <上次交付 commit|origin/main>` 列出该基线之后的提交，判断是否存在需要纳入上下文的人工变更。
+3. **多仓 workspace**：如果 workspace 下存在多个 `.git`，实施前必须先输出 repo map，并显式锁定 `workspace_root`、`code_repo_root`、`git_operation_repo_root`、`current_cwd`、`source_branch`、`ai_branch`。其中 `code_repo_root` 必须等于 `git_operation_repo_root`，不一致就停住；创建分支后还必须记录 `git_worktree_path`。
+4. **docs 被 ignore 时**：不能临时手写 `git add -f` 兜底，必须走受控 ignored-docs 暂存流程，或者明确说明文档不入库。
 
-若 `ai-delivery-hook` 不可用，代码类任务仍可继续，但最终 handoff 必须说明“未启用 AI delivery 留存”，并建议安装/启用该 Skill。
+交付文档按需生成，不由 Git hook 强制：高风险、hotfix、跨仓、复杂重构时写；日常改动由 `git-trunk-workflow` 的中文详细 commit 承担留痕。
+
+若 `ai-delivery-hook` 不可用，代码类任务照常进行，只是少了历史检索和人工变更检测这两项辅助。
 
 ## 阶段门
 
@@ -190,7 +187,7 @@ ai/<source>/<YYYYMMDD>-<type>-<topic>
 
 用户明确回复“按方案处理 / 授权修改 / 继续实现”后才进入实施。
 
-若需要修改代码或仓库状态，先判断是否需要 Git 分支并确认来源分支；再交接当前可用的 Git 交付能力创建隔离 worktree，并记录 `git_worktree_path`。后续实施必须在该 worktree 内进行。若 `ai-delivery-hook` 可用，同时检查 hook 激活状态，未激活时先请求用户授权激活；激活或确认已激活后，进入代码实施前自动开启 AI delivery session。
+若需要修改代码或仓库状态，先判断是否需要 Git 分支并确认来源分支；再交接当前可用的 Git 交付能力创建隔离 worktree，并记录 `git_worktree_path`。后续实施必须在该 worktree 内进行。
 
 ### E. Verify 验证
 
@@ -198,7 +195,7 @@ ai/<source>/<YYYYMMDD>-<type>-<topic>
 
 ### F. Handoff 交付
 
-代码类任务完成后，需要输出合并前交接摘要。若 `ai-delivery-hook` 可用，Git handoff 前必须先生成 `current.local.json` 并调用 `ai_delivery_prepare.py`，把生成的 delivery/workflow 文档纳入显式暂存清单；commit 完成后调用 `ai_delivery_finish.py` 收口。若当前有可用 Git 交付 Skill，优先交给它在 `git_worktree_path` 中完成变更归属检查、显式暂存、中文详细 commit、可选 push 临时分支、handoff 和后续受控 worktree 清理建议。否则按普通 Git 方案逐步确认。
+代码类任务完成后，需要输出合并前交接摘要。若判断本次属于高风险、hotfix、跨仓或复杂重构，先写交付文档并把路径纳入显式暂存清单。若当前有可用 Git 交付 Skill，优先交给它在 `git_worktree_path` 中完成变更归属检查、显式暂存、中文详细 commit、可选 push 临时分支、handoff 和后续受控 worktree 清理建议。否则按普通 Git 方案逐步确认。
 
 正式技术/业务文档只在用户明确要求时输出。
 
@@ -275,7 +272,7 @@ ai/<source>/<YYYYMMDD>-<type>-<topic>
 
 给 Git 能力：说明是否需要分支、来源分支候选、任务 topic、是否允许 push、最终不合并不部署。若涉及 GitHub/GitLab/Gitee 平台对象，说明平台、仓库、issue/PR/MR id、目标动作，并优先交给对应 MCP。
 
-给 AI delivery 留存能力：说明 repo root、任务标题、任务类型、变更文件、验证结果、风险等级、文档等级；首次激活 hook 前必须携带用户授权结论。
+给 AI delivery 留存能力：说明 repo root、检索关键词，或用于人工变更检测的基线版本（上次交付 commit、`origin/main`、tag）。
 
 给实施能力：说明需求/问题摘要、根因或假设、预计修改范围、不应改变的旧行为、验证计划和风险点。
 
@@ -290,7 +287,7 @@ ai/<source>/<YYYYMMDD>-<type>-<topic>
 | 数据库只读验证 | 优先匹配当前客户端可用的数据库 MCP；无 MCP 时匹配 `postgres-query`（description 包含 PostgreSQL、pgsql、database、readonly、schema、query 等能力） | 询问临时连接信息和只读权限；优先建议配置/使用数据库 MCP，必要时使用本地受控脚本方案 |
 | Git 临时分支交付 | name 为 `git-trunk-workflow`，或 description 包含 Git、branch、commit、push、staging、handoff、protected 等能力 | 使用普通 Git 命令给计划，实施前逐步确认 |
 | GitHub/GitLab/Gitee 平台协作 | 当前可用 MCP 中包含 github、gitlab、gitee、issue、PR、MR、review、CI、release 等能力 | 询问平台、仓库和目标对象；无 MCP 时建议配置 MCP，或经用户确认后使用 gh/glab/API/网页方式 |
-| AI delivery 留存 | name 为 `ai-delivery-hook`，或 description 包含 AI delivery、active session、current/prepared、repo-local docs、git hooks 等能力 | 最终 handoff 说明未启用留存，并建议安装/启用 |
+| AI 交付历史检索、人工变更检测 | name 为 `ai-delivery-hook`，或 description 包含 delivery 历史、prior context、commits since 等只读能力 | 用 `git log` 和直接读 `docs/` 替代 |
 | 代码或配置实施 | description 包含相关业务域、fullstack、page、config、mapper、export、ERP 等能力 | 使用普通代码开发流程，但先明确风险和验证计划 |
 | 正式变更文档 | description 包含 change doc、技术版、业务版、飞书文档等能力 | 用户明确要求后，用普通 Markdown 输出或询问目标文档格式 |
 
@@ -330,11 +327,10 @@ ai/<source>/<YYYYMMDD>-<type>-<topic>
 用户授权后：
 
 - 代码类实施优先确认 Git 分支需求和来源分支。
-- 若本地有 `ai-delivery-hook`，由 AI 自动检查 hook 状态；未激活时必须单独询问是否允许增量写入当前 repo 的 Git hook，用户同意后再自动执行 `activate_project.py`。
-- 若本地有 `ai-delivery-hook`，由 AI 自动执行 search/start/prepare/finish；用户不需要手动运行这些 Python 命令。
+- 若本地有 `ai-delivery-hook`，由 AI 自动调用 `ai_delivery_search.py` 和 `ai_delivery_since.py` 取历史上下文；用户不需要手动运行这些 Python 命令。
 - 若本地有适配的 Git 交付 Skill，交给它做 preflight、临时分支、提交和交接；否则使用临时 Git 方案并逐步确认。
 - 若涉及 GitHub/GitLab/Gitee issue、PR/MR、review、CI、release 等平台对象，优先交给对应 MCP；不得把平台 MCP 当作本地 Git 围栏失败后的兜底。
-- 非代码类实施，例如纯只读查库、只读日志、方案分析，不需要创建 Git 分支，也不需要开启 AI delivery session。
+- 非代码类实施，例如纯只读查库、只读日志、方案分析，不需要创建 Git 分支。
 - 实施完成后，代码类任务必须输出合并前交接摘要，并明确未合并长期分支、未部署。
 
 ## 最终交付
@@ -346,7 +342,7 @@ ai/<source>/<YYYYMMDD>-<type>-<topic>
 - 方案摘要。
 - 来源分支和 AI 临时分支，如果有。
 - commit 列表和是否已 push，如果有。
-- AI delivery 留存状态，以及 delivery/workflow 文档路径，如果已启用。
+- 交付文档路径，如果本次判断需要生成。
 - 修改文件和变更归属。
 - 验证结果和未执行项。
 - 数据库/日志证据或待验证项。

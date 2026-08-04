@@ -1,49 +1,41 @@
 ---
 name: ai-delivery-hook
-description: AI 代码交付留存和本地 Git hook 围栏。Use when AI is about to modify code, prepare delivery notes, activate/check AI delivery hooks, backfill unrecorded manual commits, or let work-orchestrator integrate delivery memory with Git handoff. Human/manual commits must not be blocked when no active AI session exists.
+description: AI 交付历史的只读检索与人工变更检测。Use when AI takes over a repository and needs prior delivery/design context, wants to list commits made since the last known point, or needs to decide whether a change warrants a written delivery document. Delivery docs are written on request, not enforced by Git hooks.
 ---
 
 # AI Delivery Hook
 
+## 定位
+
+本 skill 只做两件事：**查历史留存**、**列出指定版本之后的提交**。
+
+它不安装 Git hook，不阻断提交，不维护 session 状态，不强制文档等级。交付文档由使用者按需要求生成——高风险、跨仓、复杂重构时写；日常改动由 `git-trunk-workflow` 的中文详细 commit 承担留痕。
+
 ## 围栏（代码强制，不可绕过）
 
-以下限制由 `scripts/` 中的 Python 脚本执行：
-
-- **active session 才强制**：只有 `session.local.json` 中 `actor=ai` 且 `status=active` 时，hook 才校验交付留存；无 active session 必须放行人工提交。
-- **current schema 校验**：`current.local.json` 必须包含任务类型、标题、摘要、变更模块、风险等级、文档等级、验证项和文件列表，且标题不能为空。
-- **prepared 防过期**：`ai_delivery_prepare.py` 生成 `prepared.local.json`，记录 `current_sha256`、changed files 和 repo-local 文档路径；hash、session 标题/类型、repo_root 或文件范围不匹配时 hook 必须阻断。
-- **repo-local 文档**：AI 交付文档默认写入真实 Git 仓库的 `docs/delivery/` 和 `docs/ai-workflow/`，不写入未版本化 workspace 根目录作为主文档。
-- **文档分级**：`doc_level` 只能是 `full|compact|skip`；`skip` 必须有 `skip_reason`，且 bugfix、hotfix、跨仓和高风险任务禁止 skip。
-- **hook 增量接入**：`activate_project.py` 只追加或替换 ai-delivery managed block；检测到复杂 hook 管理器时输出 snippet，不覆盖原 hook。
-- **人工变更补录**：`ai_delivery_start.py` 检测 `last_ai_seen_commit..HEAD`，发现未记录人工提交时输出 `requires_manual_backfill=true`。
-- **多仓 workspace**：prepare 前必须显式确认 repo root，不允许靠 cwd 推断目标仓；如果 docs/ 被 `.gitignore` 忽略，必须走受控 ignored-docs 流程，不能临时手写 `git add -f`。
-- **所有脚本 JSON 输出**：成功、阻断和用户动作都通过 JSON 的 `ok`、`stage`、`message`、`next_action` 表达，并写本地审计日志。
+- **纯只读**：脚本只执行 `git rev-parse`、`git log` 和文件读取，不写仓库、不写状态文件、不装 hook。
+- **必须是 Git 仓库**：`resolve_repo_root` 解析失败即 `not_git_repo` 退出，不猜测路径。
+- **子目录归一**：任意子目录传入都解析到仓库根，避免多仓 workspace 下算错目标。
+- **参数硬上限**：`--limit` 检索 ≤ 50 条，提交列表 ≤ 200 条。
+- **JSON 输出**：成功和失败都通过 `ok`、`stage`、`message`、`next_action` 表达。
 
 ## 脚本入口
 
 ```bash
-python scripts/activate_project.py --repo-root <repo> [--skill-root <skill>]
-python scripts/doctor.py --repo-root <repo> [--skill-root <skill>]
-python scripts/ai_delivery_search.py --repo-root <repo> --query "..."
-python scripts/ai_delivery_start.py --repo-root <repo> --title "..." --type bugfix
-python scripts/ai_delivery_prepare.py --repo-root <repo>
-python scripts/check_ai_delivery.py --repo-root <repo> --mode pre-commit|pre-push
-python scripts/ai_delivery_finish.py --repo-root <repo> --status completed|abandoned|no-code
+python scripts/ai_delivery_search.py --repo-root <repo> --query "..." [--limit 10]
+python scripts/ai_delivery_since.py  --repo-root <repo> --since <commit|tag|origin/main> [--limit 50]
 ```
 
-多仓 workspace 激活：
-
-```bash
-python scripts/activate_project.py --workspace-root <workspace> --discover-repos
-python scripts/doctor.py --workspace-root <workspace>
-```
+检索范围：`docs/delivery/`、`docs/ai-workflow/`、`docs/thoughts/`。
 
 ## 围栏以内（AI 自由发挥）
 
-在脚本围栏内，AI 自行判断：
+- 用什么关键词检索历史，检索结果哪些值得作为上下文。
+- `--since` 传什么基线：上次交付 commit、`origin/main`、tag 或日期 ref。
+- 提交列表里哪些是人工变更、是否影响本次任务、要不要向使用者确认。
+- 本次改动是否值得写交付文档，写多详细，放哪个目录。
+- 交付文档写完后交给 `git-trunk-workflow` 显式暂存。
 
-- 如何总结变更背景、影响范围和风险说明。
-- 使用 `full`、`compact` 还是允许的 `skip` 文档等级。
-- 人工提交是单独补录，还是纳入本次交付记录。
-- 历史 delivery / workflow 文档中哪些结论值得参考。
-- 如何把生成文档路径交给 `git-trunk-workflow` 做显式暂存和提交。
+## 文档格式
+
+需要写交付文档时，格式参考 `references/generated_docs.md`；不强制章节齐全。

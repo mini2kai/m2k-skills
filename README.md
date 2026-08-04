@@ -40,8 +40,8 @@ Each skill's design rationale is documented in its own `DESIGN.md`.
 | `postgres-query` | PostgreSQL read-only queries, schema inspection, query plan analysis (still used; configure database MCP first when available) | Local guarded scripts: SQL whitelist check, dangerous keyword interception, row/timeout hard limits, credential redaction, audit log |
 | `server-docker-logs-readonly` | Server log read-only inspection | Allowlist scripts restrict paths; direct SSH/Docker commands forbidden |
 | `git-trunk-workflow` | AI short-lived local Git delivery through isolated worktrees; GitHub/GitLab/Gitee platform objects prefer MCP | Mandatory worktree isolation; force push/reset hard/branch deletion forbidden; explicit staging; commit/push requires confirmation |
-| `ai-delivery-hook` | AI code delivery retention hook | Active AI session requires current/prepared records and repo-local docs; human commits pass without active session |
-| `work-orchestrator` | Full-chain orchestration | Phase gates enforce analysis before execution; code tasks can auto-orchestrate AI delivery retention after authorization |
+| `ai-delivery-hook` | AI delivery history search and manual-change detection | Read-only: no repo writes, no hook installation, no commit blocking; hard parameter caps |
+| `work-orchestrator` | Full-chain orchestration | Phase gates enforce analysis before execution; code tasks hand off to specialist skills after authorization |
 | `ai-worklog` | AI collaboration daily report and timesheet | Preview before generation; no sensitive credentials in output |
 | `lark-cli-config` | Feishu/Lark CLI authorization and document operations | Auth URLs must be shown or opened explicitly; high-risk writes require confirmation |
 | `web-demo-publisher` | Web demo generation, preview, and publishing | Fixed port publishing; external network failure doesn't block local preview |
