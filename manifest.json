@@ -89,8 +89,8 @@
     },
     "work-orchestrator": {
       "path": "skills/work-orchestrator",
-      "version": "0.3.2",
-      "description": "手动触发的中文全链路总控编排 Skill：先分析不修改，动态检查当前可用 Skill，完成证据收集、影响评估、方案设计、验证计划；负责 AI 临时分支命名约定（ai/<source>/<date>-<type>-<topic>）；用户授权后交接 Git 隔离 worktree 执行、代码实施、AI delivery 留存、数据库 MCP 优先/本地受控脚本可用、GitHub/GitLab/Gitee 平台 MCP 优先、日志验证和交付收口。",
+      "version": "0.3.3",
+      "description": "手动触发的中文全链路总控编排 Skill：先分析不修改，动态检查当前可用 Skill，完成证据收集、影响评估、方案设计、验证计划；负责 AI 临时分支命名约定（ai/<source>/<date>-<type>-<topic>）；用户授权后交接 Git 隔离 worktree 执行、代码实施、AI delivery 历史检索、Worker Author Story 交付故事日志、数据库 MCP 优先/本地受控脚本可用、GitHub/GitLab/Gitee 平台 MCP 优先、日志验证和交付收口。",
       "tags": [
         "orchestration",
         "planning",
@@ -98,7 +98,9 @@
         "evidence",
         "dynamic-routing",
         "workflow",
-        "handoff"
+        "handoff",
+        "delivery-log",
+        "worker-author-story"
       ],
       "requires": [
         "none"
@@ -171,8 +173,8 @@
     },
     "ai-delivery-hook": {
       "path": "skills/ai-delivery-hook",
-      "version": "0.2.0",
-      "description": "AI 交付历史的只读检索与人工变更检测：检索 docs/delivery、docs/ai-workflow、docs/thoughts 历史留存，并列出指定基线之后的提交。不装 Git hook、不阻断提交、不维护 session；交付文档按需生成。",
+      "version": "0.2.1",
+      "description": "AI 交付历史的只读检索与人工变更检测：检索 docs/delivery、docs/ai-workflow、docs/thoughts、.worker_author_story 历史留存，并列出指定基线之后的提交。不装 Git hook、不阻断提交、不维护 session；交付日志由编排层按需维护。",
       "tags": [
         "ai",
         "delivery",
@@ -180,7 +182,8 @@
         "git-log",
         "context",
         "workflow",
-        "orchestration"
+        "orchestration",
+        "worker-author-story"
       ],
       "requires": [
         "python",

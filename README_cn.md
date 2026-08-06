@@ -38,8 +38,8 @@ M2K Skills 是在真实中文研发场景中实践 AI Agent 安全协作的产�
 | `postgres-query` | PostgreSQL 只读查询、结构查看、查询计划分析（仍在使用，建议优先配置数据库 MCP） | 本地受控脚本：SQL 白名单检查、危险关键字拦截、行数/超时硬上限、凭据脱敏、审计日志 |
 | `server-docker-logs-readonly` | 服务器日志只读排查 | 白名单脚本限定路径，禁止 SSH/Docker 直接命令 |
 | `git-trunk-workflow` | AI 短生命周期本地 Git 隔离 worktree 交付；GitHub/GitLab/Gitee 平台对象优先 MCP | 强制 worktree 隔离，禁止 force push/reset hard/删分支，显式暂存，commit/push 需确认 |
-| `ai-delivery-hook` | AI 交付历史检索、人工变更检测 | 纯只读：不写仓库、不装 hook、不阻断提交；参数硬上限 |
-| `work-orchestrator` | 全链路总控编排 | 阶段门强制先分析后实施，代码类任务在授权后交接专业 Skill |
+| `ai-delivery-hook` | AI 交付历史检索、人工变更检测，包含 `.worker_author_story/` | 纯只读：不写仓库、不装 hook、不阻断提交；参数硬上限 |
+| `work-orchestrator` | 全链路总控编排和 Worker Author Story 交付故事日志 | 阶段门强制先分析后实施，代码类任务在授权后交接专业 Skill，并在触发时维护项目级交付故事日志 |
 | `ai-worklog` | AI 协作日报和报工统计 | 先预览再生成，不输出敏感凭据 |
 | `lark-cli-config` | 飞书/Lark CLI 授权和文档操作 | 授权 URL 必须显式展示或打开，高风险写入需确认 |
 | `web-demo-publisher` | Web Demo 生成、预览和发布 | 固定端口发布，外网失败不阻塞本地 |

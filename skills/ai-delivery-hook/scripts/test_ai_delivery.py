@@ -10,7 +10,7 @@ sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from ai_delivery_common import DeliveryError, git, read_doc_summary, resolve_repo_root  # noqa: E402
-from ai_delivery_search import score_text  # noqa: E402
+from ai_delivery_search import SEARCH_DIRS, SEARCH_SUFFIXES, score_text  # noqa: E402
 from ai_delivery_since import commits_since  # noqa: E402
 
 PASSED = 0
@@ -90,6 +90,8 @@ def test_score_and_summary(tmp: Path) -> None:
     check("大小写不敏感", score_text("Delivery Bugfix", ["delivery", "bugfix"]) == 2)
     check("未命中返回 0", score_text("nothing here", ["delivery"]) == 0)
     check("空 term 被忽略", score_text("abc", ["", "abc"]) == 1)
+    check("检索范围包含 Worker Author Story", (".worker_author_story",) in SEARCH_DIRS)
+    check("检索支持 CSV", ".csv" in SEARCH_SUFFIXES)
 
     doc = tmp / "doc.md"
     doc.write_text("# Title\n\n多行\n内容   带空白", encoding="utf-8")

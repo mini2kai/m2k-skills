@@ -249,11 +249,23 @@ python skills/ai-delivery-hook/scripts/ai_delivery_search.py --repo-root . --que
 python skills/ai-delivery-hook/scripts/ai_delivery_since.py --repo-root . --since origin/main
 ```
 
-本 skill 纯只读：不安装 Git hook、不阻断提交、不维护 session 状态。交付文档按需生成，日常改动由 `git-trunk-workflow` 的中文详细 commit 承担留痕。
+本 skill 纯只读：不安装 Git hook、不阻断提交、不维护 session 状态。检索范围包括 `docs/delivery/`、`docs/ai-workflow/`、`docs/thoughts/` 和 `.worker_author_story/`。交付故事日志由 `work-orchestrator` 在 Handoff 阶段按需维护。
 
 ### work-orchestrator
 
 通过自然语言触发：`先分析不修改，帮我定位这个问题`
+
+代码类任务在交付收口时，可按触发规则维护项目根目录的 Worker Author Story：
+
+```text
+.worker_author_story/
+  INDEX.md
+  branch-flow.csv
+  logs/
+    YYYY-MM.md
+```
+
+其中 `branch-flow.csv` 用于记录来源分支、AI 工作分支、commit、push 和合回状态，方便 Excel 查看；`logs/YYYY-MM.md` 按月追加详细交付故事。
 
 ---
 
