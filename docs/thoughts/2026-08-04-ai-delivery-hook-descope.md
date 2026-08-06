@@ -68,7 +68,7 @@ hook 的复杂度代价却很实在：session 生命周期、prepared hash 防�
 保留两个只读能力：
 
 ```text
-ai_delivery_search.py   检索 docs/delivery、docs/ai-workflow、docs/thoughts
+ai_delivery_search.py   检索 docs/delivery、docs/ai-workflow、docs/thoughts（2026-08-05 起补充 .worker_author_story/）
 ai_delivery_since.py    列出指定基线之后的提交（新增，替代 checkpoint 状态机）
 ```
 
@@ -92,7 +92,7 @@ references/              hook_policy、state_files、doc_levels、delivery_schem
 
 ## 保留的风险
 
-- **没有强制留痕**：AI 可以完全不写交付文档。这是有意取舍——用 commit 质量替代文档强制。
+- **没有代码强制留痕**：本 skill 不用 hook 阻断来强制写文档。2026-08-05 起，需要长期追溯时由 `work-orchestrator` 在 Handoff 阶段维护 `.worker_author_story/`，本 skill 只负责检索。
 - **人工变更检测需要显式基线**：`--since` 要手动给。首版用 `checkpoint.local.json` 自动记录，但那份状态同样全局单份，显式传参更适合并发。
 
 如果将来变成团队多人协作、需要不可绕过的 AI 变更证据链，应该在 CI 层做，而不是回到本地 hook。

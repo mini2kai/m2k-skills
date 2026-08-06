@@ -1,6 +1,6 @@
 ---
 name: ai-delivery-hook
-description: AI 交付历史的只读检索与人工变更检测。Use when AI takes over a repository and needs prior delivery/design context, wants to list commits made since the last known point, or needs to decide whether a change warrants a written delivery document. Delivery docs are written on request, not enforced by Git hooks.
+description: AI 交付历史的只读检索与人工变更检测。Use when AI takes over a repository and needs prior delivery/design context, wants to list commits made since the last known point, or needs to inspect Worker Author Story logs. Delivery story logs are maintained by orchestration on request or handoff triggers, not enforced by Git hooks.
 ---
 
 # AI Delivery Hook
@@ -9,7 +9,7 @@ description: AI 交付历史的只读检索与人工变更检测。Use when AI t
 
 本 skill 只做两件事：**查历史留存**、**列出指定版本之后的提交**。
 
-它不安装 Git hook，不阻断提交，不维护 session 状态，不强制文档等级。交付文档由使用者按需要求生成——高风险、跨仓、复杂重构时写；日常改动由 `git-trunk-workflow` 的中文详细 commit 承担留痕。
+它不安装 Git hook，不阻断提交，不维护 session 状态，不强制文档等级。交付故事日志由 `work-orchestrator` 在 Handoff 阶段按触发规则维护；日常改动仍可由 `git-trunk-workflow` 的中文详细 commit 承担留痕。
 
 ## 围栏（代码强制，不可绕过）
 
@@ -26,16 +26,16 @@ python scripts/ai_delivery_search.py --repo-root <repo> --query "..." [--limit 1
 python scripts/ai_delivery_since.py  --repo-root <repo> --since <commit|tag|origin/main> [--limit 50]
 ```
 
-检索范围：`docs/delivery/`、`docs/ai-workflow/`、`docs/thoughts/`。
+检索范围：`docs/delivery/`、`docs/ai-workflow/`、`docs/thoughts/`、`.worker_author_story/`；其中 `.worker_author_story/` 支持 Markdown 和 CSV。
 
 ## 围栏以内（AI 自由发挥）
 
 - 用什么关键词检索历史，检索结果哪些值得作为上下文。
 - `--since` 传什么基线：上次交付 commit、`origin/main`、tag 或日期 ref。
 - 提交列表里哪些是人工变更、是否影响本次任务、要不要向使用者确认。
-- 本次改动是否值得写交付文档，写多详细，放哪个目录。
-- 交付文档写完后交给 `git-trunk-workflow` 显式暂存。
+- 本次改动是否值得维护 Worker Author Story，写多详细，放哪个项目/仓库目录。
+- Worker Author Story 写完后是否交给 `git-trunk-workflow` 显式暂存。
 
 ## 文档格式
 
-需要写交付文档时，格式参考 `references/generated_docs.md`；不强制章节齐全。
+需要维护交付故事日志时，格式参考 `references/generated_docs.md`；不强制章节齐全。

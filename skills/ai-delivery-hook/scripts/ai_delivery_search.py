@@ -4,7 +4,8 @@ import argparse
 
 from ai_delivery_common import add_common_args, cli_guard, emit, read_doc_summary, resolve_repo_root
 
-SEARCH_DIRS = (("docs", "delivery"), ("docs", "ai-workflow"), ("docs", "thoughts"))
+SEARCH_DIRS = (("docs", "delivery"), ("docs", "ai-workflow"), ("docs", "thoughts"), (".worker_author_story",))
+SEARCH_SUFFIXES = {".md", ".csv"}
 
 
 def score_text(text: str, terms: list[str]) -> int:
@@ -26,7 +27,9 @@ def run() -> None:
         root = repo_root.joinpath(*parts)
         if not root.exists():
             continue
-        for path in root.rglob("*.md"):
+        for path in root.rglob("*"):
+            if not path.is_file() or path.suffix.lower() not in SEARCH_SUFFIXES:
+                continue
             rel = path.relative_to(repo_root).as_posix()
             summary = read_doc_summary(path)
             score = score_text(rel + " " + summary, terms)

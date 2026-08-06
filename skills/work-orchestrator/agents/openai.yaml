@@ -1,7 +1,7 @@
 interface:
   display_name: "work-orchestrator"
-  short_description: "分析取证、动态编排、授权实施与交付收口"
-  default_prompt: "Use $work-orchestrator 先分析取证并出方案，授权后按本地可用 Skill 编排实施验证和交付收口。"
+  short_description: "分析取证、动态编排、授权实施、交付日志与收口"
+  default_prompt: "Use $work-orchestrator 先分析取证并出方案，授权后按本地可用 Skill 编排实施验证、Worker Author Story 交付日志和收口。"
 
 policy:
   allow_implicit_invocation: false

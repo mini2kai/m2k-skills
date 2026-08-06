@@ -72,7 +72,7 @@
 | `postgres-query` | SQL 只读、危险关键字、行数/超时上限必须代码强制 |
 | `server-docker-logs-readonly` | 服务器命令、路径、SSH/Docker 权限必须白名单脚本控制 |
 | `git-trunk-workflow` | 本地 Git 写操作、保护分支、worktree 隔离不能由模型临时决定 |
-| `ai-delivery-hook` | hook 校验、active session、prepared hash 必须确定执行 |
+| `ai-delivery-hook` | 只读边界、仓库根解析、参数上限和 JSON 输出必须代码强制；是否维护交付故事日志由 `work-orchestrator` 判断 |
 
 ## 本次落地的小改
 

@@ -1,6 +1,6 @@
 ---
 name: work-orchestrator
-description: 仅当用户明确要求使用 work-orchestrator、启用总控编排、编排分析、先分析不修改、先定位再出方案、先给方案不要改代码、先评估影响范围、先出验证方案，或要求把需求、bug、UAT/线上报错从取证、方案、授权实施、验证到交付收口动态串起来时使用。用于中文工作流中的问题定位、需求分析、证据收集、影响范围评估、方案设计、验证计划，以及在用户授权后按当前本地可用 Skill 动态交接 Git 临时分支、代码实施、交付历史检索、数据库只读验证、日志验证和交付摘要；代码类任务若存在 ai-delivery-hook，可用它只读检索历史留存和接手前的人工提交。本 Skill 默认不直接修改代码、配置、数据库或仓库状态，不合并长期分支，不部署。
+description: 仅当用户明确要求使用 work-orchestrator、启用总控编排、编排分析、先分析不修改、先定位再出方案、先给方案不要改代码、先评估影响范围、先出验证方案，或要求把需求、bug、UAT/线上报错从取证、方案、授权实施、验证到交付收口动态串起来时使用。用于中文工作流中的问题定位、需求分析、证据收集、影响范围评估、方案设计、验证计划，以及在用户授权后按当前本地可用 Skill 动态交接 Git 临时分支、代码实施、交付历史检索、数据库只读验证、日志验证、Worker Author Story 交付故事日志维护和交付摘要；代码类任务若存在 ai-delivery-hook，可用它只读检索历史留存和接手前的人工提交。本 Skill 默认不直接修改代码、配置、数据库或仓库状态，不合并长期分支，不部署。
 ---
 
 # Work Orchestrator
@@ -142,18 +142,88 @@ ai/<source>/<YYYYMMDD>-<type>-<topic>
 5. 多仓任务必须为每个真实 Git 子仓库分别创建并记录自己的 `git_worktree_path`。
 6. 合并完成并确认 worktree 干净后，才可交给 `remove_worktree.ps1` 清理。
 
-## AI delivery 留存编排
+## AI delivery 历史检索编排
 
-当当前可见 Skill 中存在 `ai-delivery-hook` 时，它提供两个只读能力，可按需纳入编排：
+当当前可见 Skill 中存在 `ai-delivery-hook` 时，它只提供只读辅助能力，可按需纳入编排：
 
-1. **Intake / Evidence**：调用 `ai_delivery_search.py` 检索 `docs/delivery/`、`docs/ai-workflow/`、`docs/thoughts/` 历史留存，作为影响范围和历史风险证据。
+1. **Intake / Evidence**：调用 `ai_delivery_search.py` 检索 `docs/delivery/`、`docs/ai-workflow/`、`docs/thoughts/`、`.worker_author_story/` 等历史留存，作为影响范围和历史风险证据。
 2. **接手时**：调用 `ai_delivery_since.py --since <上次交付 commit|origin/main>` 列出该基线之后的提交，判断是否存在需要纳入上下文的人工变更。
 3. **多仓 workspace**：如果 workspace 下存在多个 `.git`，实施前必须先输出 repo map，并显式锁定 `workspace_root`、`code_repo_root`、`git_operation_repo_root`、`current_cwd`、`source_branch`、`ai_branch`。其中 `code_repo_root` 必须等于 `git_operation_repo_root`，不一致就停住；创建分支后还必须记录 `git_worktree_path`。
-4. **docs 被 ignore 时**：不能临时手写 `git add -f` 兜底，必须走受控 ignored-docs 暂存流程，或者明确说明文档不入库。
-
-交付文档按需生成，不由 Git hook 强制：高风险、hotfix、跨仓、复杂重构时写；日常改动由 `git-trunk-workflow` 的中文详细 commit 承担留痕。
+4. **历史日志只读**：`ai-delivery-hook` 只负责历史检索、commit 列表和人工变更检测，不负责创建或写入 `.worker_author_story/`。
+5. **docs 或日志目录被 ignore 时**：不能临时手写 `git add -f` 兜底，必须走受控 ignored-docs 暂存流程，或者明确说明文档不入库。
 
 若 `ai-delivery-hook` 不可用，代码类任务照常进行，只是少了历史检索和人工变更检测这两项辅助。
+
+## Worker Author Story 交付故事日志
+
+`work-orchestrator` 在 Handoff 阶段维护项目级交付故事日志，用于长期记录每次需求、分支、commit、push、合回状态、修改范围、上下游影响、SQL/rollback、验证记录和风险说明。
+
+### 存储位置
+
+长期日志属于项目资产，禁止写入 Skill 目录。默认使用项目根目录：
+
+```text
+.worker_author_story/
+  INDEX.md
+  branch-flow.csv
+  logs/
+    YYYY-MM.md
+```
+
+- `INDEX.md`：长期索引，只记录日期、需求/任务、类型、仓库、工作分支、状态和日志链接。
+- `branch-flow.csv`：分支流程流水账，便于用 Excel 打开查看和筛选。
+- `logs/YYYY-MM.md`：按月追加详细交付日志，记录本月每个需求或提交的完整说明。
+
+多仓 workspace 中，优先选择统一项目根目录的 `.worker_author_story/`。如果 workspace 根目录不是 Git 仓且日志需要入库，则按任务主交付仓保存；涉及 SQL、参数、后端业务逻辑时优先后端仓，纯页面需求优先前端仓。前后端同等重要或无法判断日志归属时，必须停住让用户指定：写主仓、写 workspace 本地目录，或各仓分别维护。
+
+### 触发规则
+
+以下场景必须在 Handoff 阶段维护 Worker Author Story：
+
+- 用户明确要求“记录一下”“写交付日志”“写修改说明”“需求收口”“长期留存”“按提交生成文档”。
+- 完成一个明确需求或较大任务，并产生 Git commit。
+- 创建 AI 临时分支、push 临时分支，或需要记录分支是否合回。
+- 涉及 SQL / rollback、配置、业务参数、数据链路、模型/跑批、上下游接口。
+- 跨仓修改、hotfix、UAT/线上问题、高风险或复杂业务链路。
+
+以下场景不默认写正式日志，只输出简短 handoff：
+
+- 纯咨询、只读查询、只做方案分析。
+- 没有修改代码、配置、数据库或仓库状态。
+- 单文件小 typo 且没有 commit。
+- 用户明确说“不要记录”“不要写文档”。
+
+### 写入内容
+
+每次日志至少覆盖以下信息；未涉及的部分写“不涉及”，证据不足的部分写“未确认”并说明原因：
+
+- 交付结论：交付状态、是否 push、是否合回、文档更新时间。
+- 分支流程：repo、来源分支、AI 工作分支、baseline commit、commit 列表、push 状态、合回目标、merge commit、合回时间。
+- 需求背景：为什么做、原有限制、本次解决的问题、业务方如何理解。
+- 本次完成内容：按业务和技术完成项列出。
+- 修改范围：文件、修改点、影响说明，区分后端、前端、SQL、配置、脚本、文档。
+- 上游影响：页面输入、接口入参、数据来源、配置/特征/指标来源、业务维护要求。
+- 下游影响：保存表、输出字段、消费接口、模型/跑批/页面影响、新老兼容策略。
+- SQL / 配置 / 回退：apply、rollback、影响表/字段/参数、是否执行、回退方式和注意事项。
+- 验证记录：执行过的命令、结果、失败项、未执行项和原因。
+- 风险和后续事项：发布注意、回滚建议、待联调、待业务确认、剩余风险。
+
+`branch-flow.csv` 推荐字段固定为：
+
+```csv
+story_id,created_at,requirement,type,repo,source_branch,work_branch,baseline_commit,commits,pushed,merge_status,merge_target,merge_commit,merged_at,log_file,note
+```
+
+`merge_status` 使用 `not_merged`、`merged`、`unknown`、`not_applicable`。合回状态后续确认后，允许更新对应行，但不得无证据地把 `not_merged` 改成 `merged`。
+
+### 写入原则
+
+1. 以追加为主：`logs/YYYY-MM.md` 新增独立章节，不大规模重写历史。
+2. 索引轻量：`INDEX.md` 只维护短索引，不复制详细日志。
+3. 分支可追溯：创建分支、commit、push、合回时都要能在 `branch-flow.csv` 找到对应记录。
+4. 合回可复核：开始新分支或交付收口时，可读取 `branch-flow.csv` 检查历史 `not_merged` 分支；若能通过 Git 证据确认目标分支已包含对应 commit，则更新为 `merged` 并记录合回目标和时间。
+5. Git 受控：日志是否入库必须和 Git 流程协同。需要提交时，交给 `git-trunk-workflow` 显式暂存、commit、push；如果 `.worker_author_story/` 被 ignore，不得直接 `git add -f` 绕过。
+6. 不替代正式文档：Worker Author Story 是内部交付故事日志，不等同于正式技术文档、业务文档或飞书文档。正式对外文档仍只在用户明确要求时生成。
 
 ## 阶段门
 
@@ -195,9 +265,16 @@ ai/<source>/<YYYYMMDD>-<type>-<topic>
 
 ### F. Handoff 交付
 
-代码类任务完成后，需要输出合并前交接摘要。若判断本次属于高风险、hotfix、跨仓或复杂重构，先写交付文档并把路径纳入显式暂存清单。若当前有可用 Git 交付 Skill，优先交给它在 `git_worktree_path` 中完成变更归属检查、显式暂存、中文详细 commit、可选 push 临时分支、handoff 和后续受控 worktree 清理建议。否则按普通 Git 方案逐步确认。
+代码类任务完成后，需要输出合并前交接摘要，并按触发规则维护 Worker Author Story 交付故事日志。若当前有可用 Git 交付 Skill，优先交给它在 `git_worktree_path` 中完成变更归属检查、显式暂存、中文详细 commit、可选 push 临时分支、handoff 和后续受控 worktree 清理建议。否则按普通 Git 方案逐步确认。
 
-正式技术/业务文档只在用户明确要求时输出。
+Handoff 子阶段：
+
+1. **F1. Git 提交和 push 状态确认**：确认 repo、来源分支、AI 工作分支、baseline commit、本次 commit 列表、是否 push、是否存在未提交或归属不明改动。
+2. **F2. 交付摘要输出**：说明完成内容、修改范围、验证结果、未执行项、风险和下一步。
+3. **F3. Worker Author Story 交付故事日志留存**：按规则写入或更新 `.worker_author_story/INDEX.md`、`.worker_author_story/branch-flow.csv`、`.worker_author_story/logs/YYYY-MM.md`。如需入库，必须纳入 Git 受控显式暂存清单；如不入库，最终说明原因。
+4. **F4. 合并/发布提醒与风险说明**：明确未合并长期分支、未部署；提示第一合并目标、是否建议回灌、发布注意事项和回滚建议。
+
+正式技术/业务文档只在用户明确要求时输出；Worker Author Story 是内部交付故事日志，可按触发规则在 Handoff 阶段维护。
 
 ## 证据充分度
 
@@ -251,6 +328,10 @@ ai/<source>/<YYYYMMDD>-<type>-<topic>
 - 涉及写库、DDL、线上配置、部署、合并长期分支。
 - 需要高风险 Git 操作，例如 reset hard、clean、force push、rebase。
 - 用户要求的操作与专业 Skill 的安全规则冲突。
+- 需要维护 Worker Author Story，但无法确认项目根目录或多仓日志归属。
+- Worker Author Story 需要入库，但 `.worker_author_story/` 被 ignore 且没有受控 ignored-docs 暂存流程。
+- 需要把历史分支标记为已合回，但无法通过 Git 证据确认目标分支包含对应 commit。
+- 用户要求日志包含线上执行结果、数据库执行结果或发布结果，但没有对应证据。
 
 ## 最小充分上下文
 
@@ -272,7 +353,9 @@ ai/<source>/<YYYYMMDD>-<type>-<topic>
 
 给 Git 能力：说明是否需要分支、来源分支候选、任务 topic、是否允许 push、最终不合并不部署。若涉及 GitHub/GitLab/Gitee 平台对象，说明平台、仓库、issue/PR/MR id、目标动作，并优先交给对应 MCP。
 
-给 AI delivery 留存能力：说明 repo root、检索关键词，或用于人工变更检测的基线版本（上次交付 commit、`origin/main`、tag）。
+给 AI delivery 历史检索能力：说明 repo root、检索关键词，或用于人工变更检测的基线版本（上次交付 commit、`origin/main`、tag）。
+
+给 Worker Author Story 交付故事日志：说明 project root、repo root、日志归属、来源分支、AI 工作分支、baseline commit、commit 列表、push 状态、合回状态、修改范围、验证记录、SQL/rollback、上下游影响、风险和未执行项。
 
 给实施能力：说明需求/问题摘要、根因或假设、预计修改范围、不应改变的旧行为、验证计划和风险点。
 
@@ -342,7 +425,8 @@ ai/<source>/<YYYYMMDD>-<type>-<topic>
 - 方案摘要。
 - 来源分支和 AI 临时分支，如果有。
 - commit 列表和是否已 push，如果有。
-- 交付文档路径，如果本次判断需要生成。
+- Worker Author Story 交付故事日志路径和状态，如果本次触发维护：`INDEX.md` 是否更新、`branch-flow.csv` 是否更新、`logs/YYYY-MM.md` 是否追加、是否已入库；如未入库，说明原因。
+- 正式交付文档路径，如果用户明确要求生成。
 - 修改文件和变更归属。
 - 验证结果和未执行项。
 - 数据库/日志证据或待验证项。
@@ -355,6 +439,10 @@ ai/<source>/<YYYYMMDD>-<type>-<topic>
 
 ## 文档输出规则
 
+区分两类文档，避免把内部交付日志和正式对外文档混为一谈。
+
+### A. 正式技术/业务文档
+
 默认不生成正式技术版/业务版文档。只有用户明确要求时，才调用文档类 Skill 或输出正式文档。
 
 明确触发包括：
@@ -365,4 +453,8 @@ ai/<source>/<YYYYMMDD>-<type>-<topic>
 - 给业务方说明。
 - 形成变更文档。
 
-如果用户没有明确要求，最终只输出简洁 handoff 摘要，不创建正式文档。
+### B. Worker Author Story 内部交付故事日志
+
+Worker Author Story 是项目内部长期日志，不是正式对外文档。它可在 Handoff 阶段按触发规则维护，用于记录需求、分支、commit、push、合回、上下游影响、SQL/rollback、验证和风险。
+
+如果本次不满足 Worker Author Story 触发规则，且用户没有明确要求正式文档，最终只输出简洁 handoff 摘要，不创建额外文档。

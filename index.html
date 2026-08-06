@@ -315,7 +315,7 @@
       <section class="hero">
         <div class="badge"><span class="badge-dot"></span><span data-i18n="badge">Open Source</span></div>
         <h1 data-i18n="title">Reusable AI Agent Skills with Real Safety Fences</h1>
-        <p class="lead" data-i18n="lead">Code-enforced boundaries for local Git, database access, AI delivery retention, server logs, Feishu, web publishing, orchestration, and MCP-first platform integrations. Scripts block dangerous operations — prompts can't override.</p>
+        <p class="lead" data-i18n="lead">Code-enforced boundaries for local Git, database access, AI delivery memory, server logs, Feishu, web publishing, orchestration, and MCP-first platform integrations. Scripts block dangerous operations — prompts can't override.</p>
         <div class="hero-actions">
           <a class="btn primary" href="https://github.com/mini2kai/m2k-skills" data-i18n="cta_github">GitHub</a>
           <a class="btn" href="https://pypi.org/project/m2k-skills-tools/" data-i18n="cta_pypi">PyPI</a>
@@ -344,10 +344,10 @@
   <script>
     const SKILLS = [
       { name: 'git-trunk-workflow', en: 'Safe local Git operations with mandatory worktree isolation; GitHub/GitLab/Gitee platform objects prefer MCP.', zh: '强制 worktree 隔离的安全本地 Git 执行层；GitHub/GitLab/Gitee 平台对象优先 MCP。' },
-      { name: 'ai-delivery-hook', en: 'AI code delivery retention hook: active sessions require current/prepared records and repo-local docs; human commits pass without active sessions.', zh: 'AI 代码交付留存 hook：active session 下强制 current/prepared 记录和 repo-local 文档；人工提交放行。' },
+      { name: 'ai-delivery-hook', en: 'Read-only AI delivery memory search: past docs, Worker Author Story logs, and commits since a baseline.', zh: 'AI 交付记忆只读检索：历史文档、Worker Author Story 日志和基线后的提交。' },
       { name: 'postgres-query', en: 'Local guarded PostgreSQL/Greenplum scripts still in use; configure database MCP first when available.', zh: '仍在使用的 PostgreSQL/Greenplum 本地受控脚本；建议优先配置数据库 MCP。' },
       { name: 'server-docker-logs-readonly', en: 'Script-whitelist-only server log reading. No direct ssh/docker allowed.', zh: '脚本白名单服务器日志只读查询，不允许直接 ssh/docker。' },
-      { name: 'work-orchestrator', en: 'Manual-trigger orchestration: analyze first, then authorize implementation; code tasks can auto-orchestrate AI delivery retention.', zh: '手动触发总控编排：先分析后实施；代码任务可在授权后自动编排 AI delivery 留存。' },
+      { name: 'work-orchestrator', en: 'Manual-trigger orchestration: analyze first, then authorize implementation; maintain Worker Author Story handoff logs when triggered.', zh: '手动触发总控编排：先分析后实施；触发时维护 Worker Author Story 交付故事日志。' },
       { name: 'lark-cli-config', en: 'Feishu/Lark document operations: auth, fetch, create, update with risk confirmation.', zh: '飞书文档操作：授权、读取、创建、覆盖更新，高风险需确认。' },
       { name: 'web-demo-publisher', en: 'Generate, preview, and publish web demos with localhost:9999 and optional cpolar public URLs.', zh: '生成、预览、发布 Web 演示，localhost:9999 + 可选 cpolar 外网。' },
       { name: 'ai-worklog', en: 'Cross-machine AI collaboration statistics and daily work report generation.', zh: '跨机器 AI 协作记录统计，生成工作日报和报工摘要。' },
@@ -358,7 +358,7 @@
       en: {
         badge: 'Open Source',
         title: 'Reusable AI Agent Skills with Real Safety Fences',
-        lead: 'Code-enforced boundaries for local Git, database access, AI delivery retention, server logs, Feishu, web publishing, orchestration, and MCP-first platform integrations. Scripts block dangerous operations — prompts can\'t override.',
+        lead: 'Code-enforced boundaries for local Git, database access, AI delivery memory, server logs, Feishu, web publishing, orchestration, and MCP-first platform integrations. Scripts block dangerous operations — prompts can\'t override.',
         cta_github: 'GitHub',
         cta_pypi: 'PyPI',
         footer_copy: 'M2K Skills — mini2kai',
@@ -369,7 +369,7 @@
       zh: {
         badge: '开源',
         title: '可复用的 AI Agent Skills，代码级安全围栏',
-        lead: '代码强制的安全边界，覆盖本地 Git、数据库访问、AI 交付留存、服务器日志、飞书、Web 发布、编排，以及 MCP 优先的平台集成。脚本拦截危险操作，提示词无法绕过。',
+        lead: '代码强制的安全边界，覆盖本地 Git、数据库访问、AI 交付记忆、服务器日志、飞书、Web 发布、编排，以及 MCP 优先的平台集成。脚本拦截危险操作，提示词无法绕过。',
         cta_github: 'GitHub',
         cta_pypi: 'PyPI',
         footer_copy: 'M2K Skills — mini2kai',
